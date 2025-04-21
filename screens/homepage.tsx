@@ -1,17 +1,20 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Image, Text } from 'react-native';
-// import { useNavigation } from '@react-navigation/native';
+import { NavigationContainer, NavigationProp } from '@react-navigation/native';
 
-const HomePage = () => {
-    // const navigation = useNavigation();
+type RootStackParamList = {
+    Login: undefined; // Define the 'Login' route and its params if any
+};
 
-    // useEffect(() => {
-    //     const timer = setTimeout(() => {
-    //         navigation.navigate('Login' as never); // Ensure 'Login' matches a valid route name in your navigation setup
-    //     }, 3000);
+const HomePage = ({ navigation }: { navigation: NavigationProp<RootStackParamList> }) => {
 
-    //     return () => clearTimeout(timer); // Cleanup the timer
-    // }, [navigation]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            navigation.navigate('Login' as never); // Ensure 'Login' matches a valid route name in your navigation setup
+        }, 3000);
+
+        return () => clearTimeout(timer); // Cleanup the timer
+    }, [navigation]);
 
     return (
         <View style={styles.container}>
