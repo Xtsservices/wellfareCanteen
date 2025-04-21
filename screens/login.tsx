@@ -12,6 +12,7 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Login, verifyOtp as verifyOtpApi, resendOtp as resendOtpApi } from './services/restApi';
 
 type RootStackParamList = {
   SelectCanteen: undefined;
@@ -31,7 +32,7 @@ const LoginScreen = () => {
 
   const sendOtp = async () => {
     try {
-      const response = await axios.post('http://10.0.2.2:3002/api/login', {
+      const response = await axios.post(Login(), {
         mobile: phoneNumber,
       });
       if (response.status === 200) {
@@ -47,7 +48,7 @@ const LoginScreen = () => {
 
   const verifyOtp = async () => {
     try {
-      const response = await axios.post('http://10.0.2.2:3002/api/verifyOtp', {
+      const response = await axios.post(verifyOtpApi(), {
         mobile: phoneNumber,
         otp: otp.join(''),
       });
@@ -60,6 +61,22 @@ const LoginScreen = () => {
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);
+    }
+  };
+
+  const resendOtp = async () => {
+    try {
+      const response = await axios.post(resendOtpApi(), {
+        mobile: phoneNumber,
+      });
+      if (response.status === 200) {
+        console.log('OTP resent successfully');
+        Alert.alert('OTP Resent');
+      } else {
+        console.error('Failed to resend OTP');
+      }
+    } catch (error) {
+      console.error('Error resending OTP:', error);
     }
   };
 

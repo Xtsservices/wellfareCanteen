@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+
+type RootStackParamList = {
+    // Add other screens here if needed
+    Dashboard: undefined; // Define the Dashboard screen route
+};
+
+type NavigationProp = StackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 const SelectCanteenScreen = () => {
     const [selectedCanteen, setSelectedCanteen] = useState<string | null>(null);
+    const navigation = useNavigation<NavigationProp>();
 
     const canteens = [
         { id: '1', name: 'Annapoorna Canteen' },
@@ -13,6 +23,12 @@ const SelectCanteenScreen = () => {
     const handleCanteenSelect = (canteenName: string) => {
         setSelectedCanteen(canteenName);
         console.log(`Selected: ${canteenName}`);
+    };
+
+    const handleConfirm = () => {
+        if (selectedCanteen) {
+            navigation.navigate('Dashboard'); // Navigate to the Dashboard screen
+        }
     };
 
     const renderCanteenItem = ({ item }: { item: { id: string; name: string } }) => (
@@ -45,7 +61,7 @@ const SelectCanteenScreen = () => {
                 contentContainerStyle={styles.listContainer}
             />
             {selectedCanteen && (
-                <TouchableOpacity style={styles.confirmButton}>
+                <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
                     <Text style={styles.confirmButtonText}>Confirm</Text>
                 </TouchableOpacity>
             )}
@@ -100,18 +116,6 @@ const styles = StyleSheet.create({
         marginBottom: 50,
     },
     confirmButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    additionalButton: {
-        backgroundColor: '#ff5722',
-        padding: 12,
-        borderRadius: 8,
-        alignSelf: 'center',
-        marginTop: 20,
-    },
-    additionalButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
