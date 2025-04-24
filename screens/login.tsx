@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,75 +8,126 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Login, verifyOtp as verifyOtpApi, resendOtp as resendOtpApi } from './services/restApi';
 
 type RootStackParamList = {
   SelectCanteen: undefined;
 };
+
 type NavigationProp = StackNavigationProp<RootStackParamList, 'SelectCanteen'>;
 
 const LoginScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [timer, setTimer] = useState(60);
+  const [showResend, setShowResend] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const navigation = useNavigation<NavigationProp>();
+
+  const otpInputs = useRef<Array<TextInput | null>>([]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (otpSent && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (otpSent) {
+      setShowResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [otpSent, timer]);
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    if (value && index < otp.length - 1) {
+      otpInputs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && otp[index] === '' && index > 0) {
+      otpInputs.current[index - 1]?.focus();
+    }
   };
 
   const sendOtp = async () => {
+    if (phoneNumber.length !== 10) {
+      Alert.alert('Invalid Number', 'Please enter a valid 10-digit number');
+      return;
+    }
     try {
-      const response = await axios.post(Login(), {
-        mobile: phoneNumber,
+      const response = await fetch('http://10.0.2.2:3002/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: phoneNumber }),
       });
-      if (response.status === 200) {
-        console.log('OTP sent successfully');
+
+      if (response.ok) {
         Alert.alert('OTP Sent');
+        setOtpSent(true);
+        setTimer(60);
+        setShowResend(false);
       } else {
-        console.error('Failed to send OTP');
+        Alert.alert('Error', 'Failed to send OTP');
       }
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error('Send OTP Error:', error);
+      Alert.alert('Network Error', 'Could not connect to server');
     }
   };
 
   const verifyOtp = async () => {
+    const enteredOtp = otp.join('');
+    if (enteredOtp.length !== 6) {
+      Alert.alert('Enter full 6-digit OTP');
+      return;
+    }
+
     try {
-      const response = await axios.post(verifyOtpApi(), {
-        mobile: phoneNumber,
-        otp: otp.join(''),
+      const response = await fetch('http://10.0.2.2:3002/api/verifyOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: phoneNumber, otp: enteredOtp }),
       });
-      if (response.status === 200 && response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
-        console.log('OTP verified and token stored', response.data.token);
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await AsyncStorage.setItem('token', data.token);
+        Alert.alert('OTP Verified');
         navigation.navigate('SelectCanteen');
       } else {
-        console.error('Failed to verify OTP');
+        Alert.alert('Invalid OTP', data.message || 'Try again');
       }
     } catch (error) {
-      console.error('Error verifying OTP:', error);
+      console.error('Verify OTP Error:', error);
+      Alert.alert('Network Error', 'Could not verify OTP');
     }
   };
 
   const resendOtp = async () => {
     try {
-      const response = await axios.post(resendOtpApi(), {
-        mobile: phoneNumber,
+      const response = await fetch('http://10.0.2.2:3002/api/resendOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: phoneNumber }),
       });
-      if (response.status === 200) {
-        console.log('OTP resent successfully');
+
+      if (response.ok) {
         Alert.alert('OTP Resent');
+        setTimer(60);
+        setShowResend(false);
       } else {
-        console.error('Failed to resend OTP');
+        Alert.alert('Error', 'Could not resend OTP');
       }
     } catch (error) {
-      console.error('Error resending OTP:', error);
+      console.error('Resend OTP Error:', error);
+      Alert.alert('Network Error', 'Could not resend OTP');
     }
   };
 
@@ -91,6 +142,7 @@ const LoginScreen = () => {
         />
       </View>
       <Text style={styles.title}>Login or Sign up</Text>
+
       <View style={styles.inputContainer}>
         <Text style={styles.flag}>🇮🇳</Text>
         <TextInput
@@ -99,27 +151,49 @@ const LoginScreen = () => {
           keyboardType="phone-pad"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
+          maxLength={10}
         />
       </View>
+
       <TouchableOpacity style={styles.confirmButton} onPress={sendOtp}>
         <Text style={styles.confirmText}>Get OTP</Text>
       </TouchableOpacity>
-      <Text style={styles.otpLabel}>Enter OTP</Text>
-      <View style={styles.otpContainer}>
-        {otp.map((digit, index) => (
-          <TextInput
-            key={index}
-            style={styles.otpInput}
-            keyboardType="number-pad"
-            maxLength={1}
-            value={digit}
-            onChangeText={value => handleOtpChange(value, index)}
-          />
-        ))}
-      </View>
-      <TouchableOpacity style={styles.confirmButton} onPress={verifyOtp}>
-        <Text style={styles.confirmText}>Verify OTP</Text>
-      </TouchableOpacity>
+
+      {otpSent && (
+        <>
+          <Text style={styles.otpLabel}>Enter OTP</Text>
+          <View style={styles.otpContainer}>
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => {
+                  otpInputs.current[index] = ref;
+                }}
+                style={styles.otpInput}
+                keyboardType="number-pad"
+                maxLength={1}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(value, index)}
+                onKeyPress={(e) => handleKeyPress(e, index)}
+              />
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.confirmButton} onPress={verifyOtp}>
+            <Text style={styles.confirmText}>Verify OTP</Text>
+          </TouchableOpacity>
+
+          {showResend ? (
+            <TouchableOpacity style={styles.smallButton} onPress={resendOtp}>
+              <Text style={styles.smallButtonText}>Resend OTP</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={{ marginBottom: 10, color: 'gray' }}>
+              Resend in {timer}s
+            </Text>
+          )}
+        </>
+      )}
     </View>
   );
 };
@@ -201,6 +275,19 @@ const styles = StyleSheet.create({
   confirmText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  smallButton: {
+    backgroundColor: '#010080',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  smallButtonText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });
