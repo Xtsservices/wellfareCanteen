@@ -52,46 +52,18 @@ const PaymentMethod = () => {
 
       <Text style={styles.orText}>OR</Text>
 
-      <View style={styles.cardDetails}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Your Card Number"
-          placeholderTextColor="#ccc"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Name Of The Card Holder"
-          placeholderTextColor="#ccc"
-        />
-        <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="Expiry Date"
-            placeholderTextColor="#ccc"
-          />
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="CVV"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-        <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
-          <Text style={styles.payButtonText}>PAY</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.option}>
-        <Text style={styles.optionText}>Net Banking</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.option}>
-        <Text style={styles.optionText}>Cash</Text>
-      </TouchableOpacity>
       <TouchableOpacity style={styles.option}>
         <Text style={styles.optionText}>UPI</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.option}>
         <Text style={styles.optionText}>Wallet</Text>
       </TouchableOpacity>
+
+      <View style={styles.cardDetails}>
+        <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
+          <Text style={styles.payButtonText}>PAY</Text>
+        </TouchableOpacity>
+      </View>
 
       <DownNavbar style={styles.stickyNavbar} />
     </View>

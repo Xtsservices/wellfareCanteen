@@ -1,8 +1,9 @@
 import * as React from 'react';
 import ProfileScreen from './screens/profileScreen';
 import HomePage from './screens/homepage';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {NavigationContainer} from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import LoginScreen from './screens/login';
 import SelectCanteenScreen from './screens/selectCanteen';
 import Dashboard from './screens/dashboard';
@@ -15,7 +16,7 @@ const Stack = createNativeStackNavigator();
 const App = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{headerShown: false}}>
         <Stack.Screen name="Home" component={HomePage} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
@@ -26,6 +27,7 @@ const App = () => {
         <Stack.Screen name="ViewOrders" component={ViewOrders} />
         <Stack.Screen name="PaymentMethod" component={PaymentMethod} />
       </Stack.Navigator>
+      <Toast />
     </NavigationContainer>
   );
 };

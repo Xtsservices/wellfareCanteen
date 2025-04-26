@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Login, ResendOtp, VerifyOtp } from './services/restApi';
+import Toast from 'react-native-toast-message';
+import {Login, ResendOtp, VerifyOtp} from './services/restApi';
 
 type RootStackParamList = {
   SelectCanteen: undefined;
@@ -25,6 +26,7 @@ const LoginScreen = () => {
   const [timer, setTimer] = useState(60);
   const [showResend, setShowResend] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation<NavigationProp>();
 
   const otpInputs = useRef<Array<TextInput | null>>([]);
@@ -33,7 +35,7 @@ const LoginScreen = () => {
     let interval: NodeJS.Timeout;
     if (otpSent && timer > 0) {
       interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
+        setTimer(prev => prev - 1);
       }, 1000);
     } else if (otpSent) {
       setShowResend(true);
@@ -56,79 +58,101 @@ const LoginScreen = () => {
     }
   };
 
+  const validatePhoneNumber = (number: string) => {
+    const regex = /^[6-9]\d{9}$/;
+    return regex.test(number);
+  };
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    Toast.show({
+      type,
+      text1: message,
+      position: 'top',
+    });
+  };
+
   const sendOtp = async () => {
-    if (phoneNumber.length !== 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid 10-digit number');
+    if (!validatePhoneNumber(phoneNumber)) {
+      showToast('error', 'Invalid phone number. Enter a valid 10-digit number.');
       return;
     }
+    setLoading(true);
     try {
-      const response = await fetch( Login(), {
+      const response = await fetch(Login(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: phoneNumber }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mobile: phoneNumber}),
       });
 
       if (response.ok) {
-        Alert.alert('OTP Sent');
+        showToast('success', 'OTP sent successfully.');
         setOtpSent(true);
         setTimer(60);
         setShowResend(false);
       } else {
-        Alert.alert('Error', 'Failed to send OTP');
+        showToast('error', 'Failed to send OTP. Try again.');
       }
     } catch (error) {
       console.error('Send OTP Error:', error);
-      Alert.alert('Network Error', 'Could not connect to server');
+      showToast('error', 'Network error. Could not connect to server.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const verifyOtp = async () => {
     const enteredOtp = otp.join('');
     if (enteredOtp.length !== 6) {
-      Alert.alert('Enter full 6-digit OTP');
+      showToast('error', 'Enter the full 6-digit OTP.');
       return;
     }
-
+    setLoading(true);
     try {
-      const response = await fetch( VerifyOtp(), {
+      const response = await fetch(VerifyOtp(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: phoneNumber, otp: enteredOtp }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mobile: phoneNumber, otp: enteredOtp}),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        await AsyncStorage.setItem('token', data.token);
-        Alert.alert('OTP Verified');
+        await AsyncStorage.setItem('authorization', data.token);
+        console.log('Token:', data.token);
+        showToast('success', 'OTP verified successfully.');
         navigation.navigate('SelectCanteen');
       } else {
-        Alert.alert('Invalid OTP', data.message || 'Try again');
+        showToast('error', `Invalid OTP: ${data.message || 'Try again.'}`);
       }
     } catch (error) {
       console.error('Verify OTP Error:', error);
-      Alert.alert('Network Error', 'Could not verify OTP');
+      showToast('error', 'Network error. Could not verify OTP.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const resendOtp = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('http://10.0.2.2:3002/api/resendOtp', {
+      const response = await fetch(ResendOtp(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: phoneNumber }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mobile: phoneNumber}),
       });
 
       if (response.ok) {
-        Alert.alert('OTP Resent');
+        showToast('success', 'OTP resent successfully.');
         setTimer(60);
         setShowResend(false);
       } else {
-        Alert.alert('Error', 'Could not resend OTP');
+        showToast('error', 'Failed to resend OTP. Try again.');
       }
     } catch (error) {
       console.error('Resend OTP Error:', error);
-      Alert.alert('Network Error', 'Could not resend OTP');
+      showToast('error', 'Network error. Could not resend OTP.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,9 +180,18 @@ const LoginScreen = () => {
         />
       </View>
 
-      <TouchableOpacity style={styles.confirmButton} onPress={sendOtp}>
-        <Text style={styles.confirmText}>Get OTP</Text>
-      </TouchableOpacity>
+      {!otpSent && (
+        <TouchableOpacity
+          style={styles.confirmButton}
+          onPress={sendOtp}
+          disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.confirmText}>Get OTP</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       {otpSent && (
         <>
@@ -167,34 +200,50 @@ const LoginScreen = () => {
             {otp.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={(ref) => {
+                ref={ref => {
                   otpInputs.current[index] = ref;
                 }}
                 style={styles.otpInput}
                 keyboardType="number-pad"
                 maxLength={1}
                 value={digit}
-                onChangeText={(value) => handleOtpChange(value, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
+                onChangeText={value => handleOtpChange(value, index)}
+                onKeyPress={e => handleKeyPress(e, index)}
               />
             ))}
           </View>
 
-          <TouchableOpacity style={styles.confirmButton} onPress={verifyOtp}>
-            <Text style={styles.confirmText}>Verify OTP</Text>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={verifyOtp}
+            disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.confirmText}>Verify OTP</Text>
+            )}
           </TouchableOpacity>
 
           {showResend ? (
-            <TouchableOpacity style={styles.smallButton} onPress={resendOtp}>
-              <Text style={styles.smallButtonText}>Resend OTP</Text>
+            <TouchableOpacity
+              style={styles.smallButton}
+              onPress={resendOtp}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.smallButtonText}>Resend OTP</Text>
+              )}
             </TouchableOpacity>
           ) : (
-            <Text style={{ marginBottom: 10, color: 'gray' }}>
+            <Text style={{marginBottom: 10, color: 'gray'}}>
               Resend in {timer}s
             </Text>
           )}
         </>
       )}
+
+      <Text style={styles.poweredBy}>Powered by WorldTech.in</Text>
     </View>
   );
 };
@@ -206,6 +255,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
+  },
+  notificationBar: {
+    backgroundColor: 'rgba(0, 0, 0, 0)', // Transparent background
+    borderColor: 'green', // Green border
+    borderWidth: 1,
+    padding: 10,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  notificationText: {
+    color: 'green', // Green text color for better visibility
+    fontSize: 14,
   },
   logoContainer: {
     backgroundColor: '#010080',
@@ -290,6 +352,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  poweredBy: {
+    fontSize: 12,
+    color: '#555',
+    marginTop: 20,
+    textAlign: 'center',
   },
 });
 
