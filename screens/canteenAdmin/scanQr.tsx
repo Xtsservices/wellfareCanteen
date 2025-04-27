@@ -1,104 +1,121 @@
-// import React, { useState, useEffect } from 'react';
-// import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, PermissionsAndroid, Alert } from 'react-native';
-// import { RNCamera } from 'react-native-camera';
+import React from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Camera, useCameraDevice } from 'react-native-vision-camera';
 
-// const ScanQr = () => {
-//     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-//     const [scanned, setScanned] = useState(false);
+const BluetoothControlScreen = () => {
+  const device = useCameraDevice('back');
 
-//     const requestCameraPermission = async () => {
-//         try {
-//             const granted = await PermissionsAndroid.request(
-//                 PermissionsAndroid.PERMISSIONS.CAMERA,
-//                 {
-//                     title: 'Camera Permission',
-//                     message: 'This app needs access to your camera to scan QR codes.',
-//                     buttonNeutral: 'Ask Me Later',
-//                     buttonNegative: 'Cancel',
-//                     buttonPositive: 'OK',
-//                 }
-//             );
-//             setHasPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
-//         } catch (err) {
-//             console.warn(err);
-//         }
-//     };
+  if (device == null) {
+    return <Text>Camera not available</Text>;
+  }
 
-//     useEffect(() => {
-//         requestCameraPermission();
-//     }, []);
+  return (
+    <View style={styles.container}>
+      {/* Camera Preview */}
+      <View style={styles.cameraContainer}>
+        <Camera
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={true}
+        />
+      </View>
 
-//     const handleBarCodeScanned = (event: { data: string; type: string }) => {
-//         setScanned(true);
-//         Alert.alert('Scanned!', `Bar code with type ${event.type} and data ${event.data} has been scanned!`);
-//     };
+      {/* Overlay Content */}
+      <View style={styles.overlay}>
+        <Text style={styles.title}>V</Text>
+        
+        <View style={styles.tokenContainer}>
+          <Text style={styles.verifyText}>Verify</Text>
+          <Text style={styles.instructionText}>Enter token number</Text>
+          <TextInput
+            style={styles.tokenInput}
+            placeholder=""
+            keyboardType="numeric"
+          />
+        </View>
+        
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>proposed by</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
-//     if (hasPermission === null) {
-//         return <Text>Requesting for camera permission...</Text>;
-//     }
-//     if (hasPermission === false) {
-//         return <Text>No access to camera</Text>;
-//     }
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  cameraContainer: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+    justifyContent: 'space-between',
+  },
+  title: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  section: {
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  sectionTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  sectionSubtitle: {
+    color: 'white',
+    fontSize: 16,
+  },
+  deviceInfo: {
+    alignItems: 'center',
+    marginVertical: 30,
+  },
+  deviceName: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  tokenContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  verifyText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  instructionText: {
+    color: 'white',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  tokenInput: {
+    backgroundColor: 'white',
+    width: '80%',
+    padding: 15,
+    borderRadius: 10,
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  footer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  footerText: {
+    color: 'white',
+    fontSize: 14,
+  },
+});
 
-//     return (
-//         <View style={styles.container}>
-//             <ImageBackground
-//                 source={{ uri: 'https://via.placeholder.com/300x600' }} // Replace with your background image URL
-//                 style={styles.backgroundImage}
-//             >
-//                 <View style={styles.scannerContainer}>
-//                     <RNCamera
-//                         style={StyleSheet.absoluteFillObject}
-//                         onBarCodeRead={scanned ? undefined : handleBarCodeScanned}
-//                         captureAudio={false}
-//                     />
-//                 </View>
-//                 <TouchableOpacity
-//                     style={styles.button}
-//                     onPress={() => setScanned(false)}
-//                 >
-//                     <Text style={styles.buttonText}>Verify</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity style={styles.button}>
-//                     <Text style={styles.buttonText}>Enter token number</Text>
-//                 </TouchableOpacity>
-//                 <Text style={styles.footerText}>proposed by</Text>
-//             </ImageBackground>
-//         </View>
-//     );
-// };
-
-// const styles = StyleSheet.create({
-//     container: {
-//         flex: 1,
-//     },
-//     backgroundImage: {
-//         flex: 1,
-//         justifyContent: 'center',
-//         alignItems: 'center',
-//     },
-//     scannerContainer: {
-//         width: '80%',
-//         height: '50%',
-//         borderWidth: 2,
-//         borderColor: 'white',
-//     },
-//     button: {
-//         backgroundColor: 'blue',
-//         padding: 15,
-//         marginVertical: 10,
-//         borderRadius: 5,
-//         width: '80%',
-//         alignItems: 'center',
-//     },
-//     buttonText: {
-//         color: 'white',
-//         fontSize: 16,
-//     },
-//     footerText: {
-//         marginTop: 20,
-//         color: 'white',
-//     },
-// });
-
-// export default ScanQr;
+export default BluetoothControlScreen;
