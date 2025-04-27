@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {AllCanteens} from './services/restApi';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// import {AllCanteens} from './services/restApi'; // Commented out API import
+// import AsyncStorage from '@react-native-async-storage/async-storage'; // Commented out AsyncStorage import
 
 type RootStackParamList = {
   Dashboard: undefined;
@@ -25,14 +25,35 @@ type Canteen = {
 };
 
 const SelectCanteenScreen = () => {
-  const [canteens, setCanteens] = useState<Canteen[]>([]);
+  // Hardcoded canteen data instead of API fetch
+  const hardcodedCanteens: Canteen[] = [
+    {
+      id: '1',
+      canteenName: 'Main Canteen',
+      canteenImage: 'https://example.com/canteen1.jpg', // Replace with actual image URL or local image
+    },
+    {
+      id: '2',
+      canteenName: 'North Campus Canteen',
+      canteenImage: 'https://example.com/canteen2.jpg', // Replace with actual image URL or local image
+    },
+    {
+      id: '3',
+      canteenName: 'South Campus Canteen',
+      canteenImage: 'https://example.com/canteen3.jpg', // Replace with actual image URL or local image
+    },
+  ];
+
+  const [canteens, setCanteens] = useState<Canteen[]>(hardcodedCanteens);
   const [selectedCanteen, setSelectedCanteen] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
+    // Commented out the API fetch and replaced with hardcoded data
+    /*
     const fetchCanteens = async () => {
       try {
-        const token = await AsyncStorage.getItem('authorization'); // Retrieve token from AsyncStorage
+        const token = await AsyncStorage.getItem('authorization');
         if (!token) {
           console.error('No token found');
           return;
@@ -40,8 +61,14 @@ const SelectCanteenScreen = () => {
         const response = await fetch(AllCanteens(), {
           headers: {
             authorization: token,
+            'Content-Type': 'application/json',
           },
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
         if (response.ok) {
           setCanteens(
@@ -60,6 +87,10 @@ const SelectCanteenScreen = () => {
     };
 
     fetchCanteens();
+    */
+    
+    // Using hardcoded data instead
+    setCanteens(hardcodedCanteens);
   }, []);
 
   const handleCanteenSelect = (canteenName: string) => {

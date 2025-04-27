@@ -11,14 +11,18 @@ import CartPage from './screens/cartPage';
 import OrderPlacedScreen from './screens/orderPlaced';
 import ViewOrders from './screens/viewOrders';
 import PaymentMethod from './screens/paymentsMethod';
+import SettingsScreen from './screens/SettingScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
 const Stack = createNativeStackNavigator();
+
+
 
 const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         <Stack.Screen name="Home" component={HomePage} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SelectCanteen" component={SelectCanteenScreen} />
         <Stack.Screen name="Dashboard" component={Dashboard} />
@@ -26,6 +30,9 @@ const App = () => {
         <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} />
         <Stack.Screen name="ViewOrders" component={ViewOrders} />
         <Stack.Screen name="PaymentMethod" component={PaymentMethod} />
+        <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+        <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
+
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>
