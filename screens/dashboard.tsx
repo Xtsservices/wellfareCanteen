@@ -9,8 +9,16 @@ import {
   StyleSheet,
 } from 'react-native';
 import DownNavbar from './downNavbar';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from './navigationTypes'
 
-const Dashboard = () => {
+type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SelectCanteen'>;
+
+interface DashboardProps {
+  navigation: DashboardScreenNavigationProp;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
   return (
     <>
       <View style={styles.container}>
@@ -224,7 +232,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-around',
     padding: 10,
-    paddingBottom: 60, // Add padding to avoid overlap with the sticky navbar
+    paddingBottom: 60,
   },
   foodCard: {
     width: 120,
