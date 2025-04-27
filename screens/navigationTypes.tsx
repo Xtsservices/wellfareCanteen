@@ -3,5 +3,7 @@ export type RootStackParamList = {
     LoginScreen: undefined;     
     ProfileScreen: undefined;  
     SelectCanteen: undefined;   
-    NotificationsScreen: undefined; 
+    NotificationsScreen: undefined;
+    WalletScreen: undefined; 
+    orderhistory:undefined;
 } 
