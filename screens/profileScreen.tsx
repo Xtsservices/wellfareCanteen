@@ -5,7 +5,7 @@ const ProfileScreen = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.imageContainer}>
-                <Image source={require('../assets/images/profilescreenImage.png')} style={styles.image} />
+                <Image style={styles.image} />
             </View>
             <View style={styles.formContainer}>
                 <View style={styles.row}>
