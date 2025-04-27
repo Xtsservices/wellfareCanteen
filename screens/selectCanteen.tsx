@@ -51,6 +51,7 @@ const SelectCanteenScreen = () => {
               canteenImage: item.canteenImage,
             })),
           );
+          console.log('Canteens fetched successfully:', result.data);
         } else {
           console.error('Failed to fetch canteens:', result.message);
         }
