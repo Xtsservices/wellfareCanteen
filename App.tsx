@@ -12,12 +12,12 @@ import OrderPlacedScreen from './screens/orderPlaced';
 import ViewOrders from './screens/viewOrders';
 import PaymentMethod from './screens/paymentsMethod';
 import SettingsScreen from './screens/SettingScreen';
+import AdminDashboard from './screens/canteenAdmin/adminDashboard';
+import BluetoothControlScreen from './screens/canteenAdmin/scanQr';
 import NotificationsScreen from './screens/NotificationsScreen';
 import WalletScreen from './screens/WalletScreen';
 import orderhistory from './screens/orderhistory'
 const Stack = createNativeStackNavigator();
-
-
 
 const App = () => {
   return (
@@ -36,7 +36,17 @@ const App = () => {
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
         <Stack.Screen name="WalletScreen" component={WalletScreen} />
         <Stack.Screen name="orderhistory" component={orderhistory} />
+        <Stack.Screen
+          name="NotificationsScreen"
+          component={NotificationsScreen}
+        />
 
+        {/* Canteen Admin */}
+        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+        <Stack.Screen
+          name="BluetoothControl"
+          component={BluetoothControlScreen}
+        />
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>

@@ -1,7 +1,20 @@
 import React from 'react';
 import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+
+type RootStackParamList = {
+  BluetoothControl: undefined;
+  AdminDashboard: undefined;
+};
+
+type NavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'BluetoothControl'
+>;
 
 const AdminDashboard = () => {
+  const navigation = useNavigation<NavigationProp>();
   return (
     <View style={styles.container}>
       {/* Top Blue Header */}
@@ -53,9 +66,12 @@ const AdminDashboard = () => {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Scan QR CODE</Text>
-        <Text style={styles.footerText}>or</Text>
-        <Text style={styles.footerText}>Token number</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('BluetoothControl')}>
+          <Text style={styles.footerText}>Scan QR CODE</Text>
+          <Text style={styles.footerText}>or</Text>
+          <Text style={styles.footerText}>Token number</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -99,10 +115,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    height: 50,
+    height: 100,
     backgroundColor: '#000080', // Navy Blue
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   footerText: {
     color: '#fff',
