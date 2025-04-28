@@ -11,12 +11,11 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {AllCanteens} from './services/restApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RootStackParamList } from './navigationTypes'; // Adjust the import path as necessary
 
-type RootStackParamList = {
-  Dashboard: undefined;
-};
+// Removed duplicate declaration of RootStackParamList
 
-type NavigationProp = StackNavigationProp<RootStackParamList, 'Dashboard'>;
+type NavigationProp = StackNavigationProp<RootStackParamList, 'SelectCanteen'>;
 
 type Canteen = {
   id: string;
@@ -69,7 +68,13 @@ const SelectCanteenScreen = () => {
 
   const handleConfirm = () => {
     if (selectedCanteen) {
-      navigation.navigate('Dashboard');
+      const selectedCanteenId = canteens.find(
+        canteen => canteen.canteenName === selectedCanteen,
+      )?.id;
+
+      if (selectedCanteenId) {
+        navigation.navigate('Dashboard', {canteenId: selectedCanteenId});
+      }
     }
   };
 

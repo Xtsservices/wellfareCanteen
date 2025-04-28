@@ -60,4 +60,16 @@ export type RootStackParamList = {
     total: number;
   };
   
+  Home: undefined;
+  Login: undefined;
+  Dashboard: { canteenId: string };
+  CartPage: undefined;
+  OrderPlaced: undefined;
+  ViewOrders: undefined;
+  PaymentMethod: undefined;
+  VerifyToken: undefined;
+  MenubyMenuId: {menuId: string};
+  orderhistory: undefined;
+  MenuItemsByMenuId: { menuId: string };
+  breakfast: undefined;
 };
