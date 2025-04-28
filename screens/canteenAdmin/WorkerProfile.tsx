@@ -42,7 +42,6 @@ const WorkerProfile: React.FC<WorkerProfileScreenProps> = ({ route }) => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        
         <View style={styles.profilePicContainer}>
           <Image source={{ uri: 'https://placekitten.com/200/200' }} style={styles.profilePic} />
         </View>
@@ -119,11 +118,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-  },
-  backIcon: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
   },
   profilePicContainer: {
     marginTop: 50,

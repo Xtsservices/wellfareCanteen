@@ -4,7 +4,6 @@ import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigationTypes';
 
-// Define types for route and navigation
 type CheckoutScreenRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
 type CheckoutScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Checkout'>;
 
@@ -14,7 +13,7 @@ type Props = {
 };
 
 const Checkout: React.FC<Props> = ({ route, navigation }) => {
-  const { cart, total } = route.params; // <- coming from navigation
+  const { cart, total } = route.params; 
 
   const renderDashedLine = () => (
     <Text style={styles.dashedLine}>------------------------------------------</Text>

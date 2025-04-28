@@ -1,4 +1,3 @@
-// navigationTypes.ts (or RootStackParamList.ts)
 
 export interface WorkerUser {
   dob: number;
@@ -38,8 +37,21 @@ export type RootStackParamList = {
   AdminDashboard: undefined;
   Breakfast: undefined;
   Users: undefined;
-  WorkerProfile: {
-    user: WorkerUser;
+  WorkerProfile: { 
+    user: {
+
+      id: number;
+      name: string;
+      mobile: string;
+      position: string;
+      email: string;
+      address: string;
+      dob: string;
+      gender: string;
+      aadhar: string;
+      adminName: string;
+      adminId: string;
+    }
   };
   AddUser: undefined;
   Menu: undefined;
@@ -47,4 +59,5 @@ export type RootStackParamList = {
     cart: CheckoutCartItem[];   
     total: number;
   };
+  
 };

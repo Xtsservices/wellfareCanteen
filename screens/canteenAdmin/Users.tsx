@@ -20,7 +20,7 @@ const Users: React.FC = () => {
             address: '123 Main St',
             dob: '01/01/1990',
             gender: 'Male',
-            aadhaar: '1234-5678-9012',
+            aadhar: '1234-5678-9012',
             adminName: 'hsuifhiush',
             adminId: '111111'
         },
@@ -33,7 +33,7 @@ const Users: React.FC = () => {
             address: '456 Elm St',
             dob: '02/02/1992',
             gender: 'Female',
-            aadhaar: '2234-5678-9012',
+            aadhar: '2234-5678-9012',
             adminName: 'dferfer',
             adminId: '222222'
         },
@@ -46,7 +46,7 @@ const Users: React.FC = () => {
             address: '789 Oak St',
             dob: '03/03/1993',
             gender: 'Male',
-            aadhaar: '3234-5678-9012',
+            aadhar: '3234-5678-9012',
             adminName: 'refge',
             adminId: '333333'
         },
@@ -59,7 +59,7 @@ const Users: React.FC = () => {
             address: '321 Pine St',
             dob: '04/04/1994',
             gender: 'Female',
-            aadhaar: '4234-5678-9012',
+            aadhar: '4234-5678-9012',
             adminName: 'rgwreg',
             adminId: '444444'
         },
@@ -83,7 +83,7 @@ const Users: React.FC = () => {
                     <TouchableOpacity
                     key={user.id}
                     style={styles.userCard}
-                    onPress={() => navigation.navigate('WorkerProfile', { user })}
+                    onPress={() => navigation.navigate('WorkerProfile', {user})}
                 >
                     <View>
                         <Text style={styles.userName}>{user.name}</Text>
