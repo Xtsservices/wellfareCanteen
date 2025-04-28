@@ -7,3 +7,5 @@ export const ResendOtp = () => `${URL}/resendOtp`;
 export const AllCanteens = () => `${URL}/user/getAllCanteens`;
 // export const MenuItems = (canteenId: string) =>
 //   `${URL}/user/getMenuItems?canteenId=${canteenId}`;
+export const GetMenuItemsbyCanteenId = (canteenId: string) =>
+  `${URL}/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=${canteenId}`;

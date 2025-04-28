@@ -17,7 +17,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleLogout = () => {
         setIsLoggedIn(false);
-        navigation.replace('LoginScreen');
+        navigation.replace('Login');
     };
 
     if (!isLoggedIn) {

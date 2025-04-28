@@ -15,7 +15,11 @@ import SettingsScreen from './screens/SettingScreen';
 import AdminDashboard from './screens/canteenAdmin/adminDashboard';
 import BluetoothControlScreen from './screens/canteenAdmin/scanQr';
 import NotificationsScreen from './screens/NotificationsScreen';
-const Stack = createNativeStackNavigator();
+import VerifyTokenScreen from './screens/canteenAdmin/veifyToken';
+import MenuItemsByMenuIdScreen from './screens/menuItemsByMenuId';
+import {RootStackParamList} from './screens/navigationTypes'; // Adjust the
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
   return (
@@ -25,7 +29,16 @@ const App = () => {
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SelectCanteen" component={SelectCanteenScreen} />
-        <Stack.Screen name="Dashboard" component={Dashboard} />
+        <Stack.Screen
+          name="Dashboard"
+          component={Dashboard}
+          initialParams={{canteenId: undefined}} // Pass canteenId as initial param
+        />
+        <Stack.Screen
+          name="MenubyMenuId"
+          component={MenuItemsByMenuIdScreen}
+          initialParams={{menuId: undefined}} // Pass menuId as initial param
+        />
         <Stack.Screen name="CartPage" component={CartPage} />
         <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} />
         <Stack.Screen name="ViewOrders" component={ViewOrders} />
@@ -42,6 +55,9 @@ const App = () => {
           name="BluetoothControl"
           component={BluetoothControlScreen}
         />
+        <Stack.Screen name="VerifyToken" component={VerifyTokenScreen} />
+
+        {/* Add other screens here */}
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>
