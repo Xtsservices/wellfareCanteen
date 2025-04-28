@@ -1,9 +1,25 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { Camera, useCameraDevice } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 
 const BluetoothControlScreen = () => {
+  const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
+  const [isActive, setIsActive] = useState(true);
+
+  useEffect(() => {
+    if (!hasPermission) {
+      requestPermission().then(permissionGranted => {
+        if (!permissionGranted) {
+          setIsActive(false);
+        }
+      });
+    }
+  }, [hasPermission]);
+
+  if (!hasPermission) {
+    return <Text>Camera permission not granted</Text>;
+  }
 
   if (device == null) {
     return <Text>Camera not available</Text>;
