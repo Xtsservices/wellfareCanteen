@@ -48,10 +48,14 @@ const LoginScreen = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    if (value && index < otp.length - 1) {
+  
+    if (value.length === 1 && index < otp.length - 1) {
       otpInputs.current[index + 1]?.focus();
+    } else if (value === '' && index > 0) {
+      otpInputs.current[index - 1]?.focus();
     }
   };
+  
 
   const handleKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === 'Backspace' && otp[index] === '' && index > 0) {
