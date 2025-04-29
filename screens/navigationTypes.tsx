@@ -12,6 +12,7 @@ export interface WorkerUser {
 }
 
 export interface CartItem {
+  
   id: number;
   name: string;
   price: number;
@@ -38,28 +39,28 @@ export type RootStackParamList = {
   Breakfast: undefined;
   Users: undefined;
   WorkerProfile: { 
-    user: {
-
-      id: number;
-      name: string;
-      mobile: string;
-      position: string;
-      email: string;
-      address: string;
-      dob: string;
-      gender: string;
-      aadhar: string;
-      adminName: string;
-      adminId: string;
-    }
+    user:any 
+    // {
+      
+    //   id: number;
+    //   name: string;
+    //   mobile: string;
+    //   position: string;
+    //   email: string;
+    //   address: string;
+    //   dob: string;
+    //   gender: string;
+    //   aadhar: string;
+    //   adminName: string;
+    //   adminId: string;
+    // }
   };
-  AddUser: undefined;
+  AddUser: { onAddUser: (user: any) => void };
   Menu: undefined;
   Checkout: {
     cart: CheckoutCartItem[];   
     total: number;
-  };
-  
+  };  
   Home: undefined;
   Login: undefined;
   Dashboard: { canteenId: string };
@@ -72,4 +73,5 @@ export type RootStackParamList = {
   orderhistory: undefined;
   MenuItemsByMenuId: { menuId: string };
   breakfast: undefined;
+  
 };

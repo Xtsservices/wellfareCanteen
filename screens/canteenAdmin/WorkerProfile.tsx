@@ -41,7 +41,11 @@ const WorkerProfile: React.FC<WorkerProfileScreenProps> = ({ route }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+
       <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
         <View style={styles.profilePicContainer}>
           <Image source={{ uri: 'https://placekitten.com/200/200' }} style={styles.profilePic} />
         </View>
@@ -169,6 +173,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginRight: 8,
+  },
+  backArrow: {
+    fontSize: 24,
+    color: '#fff',
+    position: 'absolute',
+    left: 16,
+    top: 16,
   },
   footer: {
     textAlign: 'center',

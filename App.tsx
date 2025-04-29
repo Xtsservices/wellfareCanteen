@@ -63,7 +63,6 @@ const App = () => {
         <Stack.Screen name="AddUser" component={AddUser} />
         <Stack.Screen name="Menu" component={Menu} />
         <Stack.Screen name="WorkerProfile" component={WorkerProfile}/>
-        <Stack.Screen name="BluetoothControl"component={BluetoothControlScreen}/>
         <Stack.Screen name="Checkout" component={Checkout}/>
         <Stack.Screen
           name="BluetoothControl"

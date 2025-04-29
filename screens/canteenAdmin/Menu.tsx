@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 const Menu: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
@@ -28,31 +30,31 @@ const Menu: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.menuScroll}>
-        <Text style={styles.title}>🍽️ Menu</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>🍽️ Today's Menu</Text>
 
-        {/* Category Selection */}
+        {/* Category Buttons */}
         <View style={styles.categoryContainer}>
-          <TouchableOpacity
-            style={[styles.categoryButton, selectedCategory === 'breakfast' && styles.selectedCategory]}
-            onPress={() => setSelectedCategory('breakfast')}
-          >
-            <Text style={styles.categoryText}>Breakfast</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.categoryButton, selectedCategory === 'lunch' && styles.selectedCategory]}
-            onPress={() => setSelectedCategory('lunch')}
-          >
-            <Text style={styles.categoryText}>Lunch</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.categoryButton, selectedCategory === 'dinner' && styles.selectedCategory]}
-            onPress={() => setSelectedCategory('dinner')}
-          >
-            <Text style={styles.categoryText}>Dinner</Text>
-          </TouchableOpacity>
+          {['breakfast', 'lunch', 'dinner'].map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category && styles.selectedCategory,
+              ]}
+              onPress={() => setSelectedCategory(category as 'breakfast' | 'lunch' | 'dinner')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category && styles.selectedCategoryText,
+                ]}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Menu Items */}
@@ -64,6 +66,7 @@ const Menu: React.FC = () => {
                   uri: item.image || 'https://via.placeholder.com/150',
                 }}
                 style={styles.itemImage}
+                resizeMode="cover"
               />
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.itemPrice}>₹{item.price}</Text>
@@ -78,35 +81,45 @@ const Menu: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F2F6FC',
   },
-  menuScroll: {
+  scrollContent: {
     padding: 16,
+    paddingBottom: 30,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
+  
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#222',
+    marginTop: 50,
     textAlign: 'center',
   },
   categoryContainer: {
+    marginTop: 40,
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     marginBottom: 20,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   categoryButton: {
     paddingVertical: 8,
-    paddingHorizontal: 20,
-    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    backgroundColor: '#E0E7FF',
     borderRadius: 20,
+    marginHorizontal: 6,
   },
   selectedCategory: {
-    backgroundColor: 'blue',
+    backgroundColor: '#4F46E5',
   },
   categoryText: {
-    color: '#333',
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+  },
+  selectedCategoryText: {
+    color: '#fff',
   },
   menuContainer: {
     flexDirection: 'row',
@@ -114,35 +127,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   menuItem: {
-    width: '48%',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
+    width: (width - 48) / 2, // responsive half screen width
+    backgroundColor: '#fff',
+    borderRadius: 16,
     padding: 10,
-    marginBottom: 20,
+    marginBottom: 16,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    elevation: 4,
+    shadowColor: '#aaa',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   itemImage: {
     width: '100%',
     height: 120,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 8,
   },
   itemName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#555',
-    marginBottom: 4,
+    color: '#333',
     textAlign: 'center',
+    marginBottom: 4,
   },
   itemPrice: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
   },
 });
 
