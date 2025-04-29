@@ -13,6 +13,7 @@ import {RootStackParamList} from './navigationTypes';
 import axios from 'axios';
 import {GetMenuItemsbyCanteenId} from './services/restApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DownNavbar from './downNavbar';
 
 type DashboardScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -47,6 +48,13 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
   });
   useEffect(() => {
     const fetchMenuData = async () => {
+      // Store canteen ID in AsyncStorage
+      try {
+        await AsyncStorage.setItem('canteenId', canteenId);
+      } catch (error) {
+        console.error('Error storing canteen ID:', error);
+      }
+
       const token = await AsyncStorage.getItem('authorization');
       if (!token) {
         console.error('No token found');
@@ -72,9 +80,6 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
   const renderMenuItems = (date: string, menu: any) => {
     return (
       <View key={date} style={{paddingHorizontal: 10, marginVertical: 10}}>
-        <Text style={{color: 'white', fontSize: 18, fontWeight: 'bold'}}>
-          {date === today ? 'Today' : 'Tomorrow'}
-        </Text>
         <Text style={{color: 'white', fontSize: 14, marginBottom: 10}}>
           Date: {date}
         </Text>
@@ -178,6 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
               renderMenuItems(date, menuData[date]),
             )}
         </ScrollView>
+        <DownNavbar />
       </View>
     </>
   );
