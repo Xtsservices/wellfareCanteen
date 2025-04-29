@@ -5,10 +5,8 @@ import {StackNavigationProp} from '@react-navigation/stack';
 
 // Define your stack's routes
 type RootStackParamList = {
-  Dashboard: undefined;
-  //   Search: undefined;
+  Dashboard: {SelectCanteenId: string};
   CartPage: undefined;
-  //   Profile: undefined;
   ViewOrders: undefined;
 };
 
@@ -19,7 +17,8 @@ const DownNavbar = ({style}: {style?: object}) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.navigate('Dashboard')}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Dashboard', {SelectCanteenId: ''})}>
         <Image
           source={{
             uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAMAAABC4vDmAAAAY1BMVEX///8AAAB+fn6Hh4d4eHiCgoJgYGCrq6v39/dJSUnx8fH7+/vZ2dm5ublWVlaWlpYqKiozMzPh4eFCQkJra2uenp7KysolJSXp6enT09O/v7+kpKSxsbGQkJAWFhYODg4dHR1ryf89AAAEtklEQVR4nO2c25qqMAyFBRE5iQiIojD6/k+5dWYXE+lRQvGi63J0ys/HahrS1NWKRklX111CNBiRzpX3UHVemgNqd/N+ddstTfLS1hu0XZrlv6LAAwqipXmeSkIPKfwCu7eF96aiXZpp9/PO5Hk/C9t9P0Z6ar8gErJ4AZ/jcnYvY4BRnf8C6H/F5TJMzQFA1I9gfq7BHw7NEkwdNNH6729r+LfOOlKKrj9Mtx0iTe0yJaInhZ+p1ThawkvnKDc45xDXot0vJ3Bh/232Rz748HSxxXSFxjmOPz/Cz692mFBSwF1RkN0DC0gl9IwoRKKwms9uLInFoazaHeSYQ8TkC8WxWfNREwurpgORIhgxC+Xa1sC0oZ4pbTD2iab/pqhB81xrWcOvFDOkDR3Me3vNpRYt2z/UaUO6gfdssHZc4P9tSNOGxMziUNjuhGlDBh0bGw6cwOh+yKiY0M0GxjeboNcLIrujiPnRyxN6EaOIoylMj0wsDoXs7k+2O4qY1ceOyODr19Q4mkE75RPmTgJvrphk9+4GhlpPWr4iGEdvE+IotPhtcl57hXf4qd1RUnAnmMoNXKk+Sxu08l7DIadmye0dDEBVnUNVv7txcQ3ljYTlph6Oa2hTFINJU47u07tFQeVAXMJE1Qb90If8GJOnsWc0vKbdUd67mSHhj1DGqBVr5rI4lKHdUfJzmq1E2MCAo0rRUCChSsi4VHCll4fBFhaewlmrgym8/ZNkhqNi2BwWh9IrrqUwYt4s7JFtYdqw5z+XuV9nx8Iv3ZwvlChhtVRARZlINbootri1UnMis7ulYhJHaOmHcdS6xaEEdp81KVCr5aUNGVy1vY1tptUKrc/x7+sXmpeP91f7UD4meESjsvg2qKIc7QIvD/WY/fX3QdV4cfkOKH+o0pyWh2IIF1bA3a6Xh1r/bbL87vLu6jwoV98AtSqDvIabdV8B9S4H5aAclINyUA7KQTkoQqg0Esio3kYIlez8MI8FykN/p10lIYPK3rN9jnzNvUYqqONdRAJ116vf0EDhfg6ZtFo9aaDe3xUl0hmOBKoTEfCksQVGAYXaopTSaLSigBI0xouk3t6hgBouVwTXrUDX4FVhsgGVsYvJ+zlePRvK50cAxboqb4rQmLECq7KwSwDFvhirvshKqb0FKBY4lT3BLJopS7sOykE5KAfloByUg3JQDspBOSgH5aAclINyUA7KQTkoAdS45LfXvRY9FPviuLjN6qsH1W4KOVTKNgvGFdvhsKJqm44cKmFXHjfKZ6wjTrWZQg7FtnpO4xp4xIrxueL5UUOlrHO54pxfGPbLFL+JRA01/DYGb9637MMfuauIoZLhJCKvvTsdNlNC6TkQWqhoaN2PubZ5/caI9CwZKRRohee7Jn31pVeSQ9CUUJfXaQ/R/Bpc9XyETSL41toUSvD7IWnSwFMXwj0xtOdZBf2Rs73Y5aZQeccZ5tgH8EyMZP80fe8Dl0kbSke1ZBx0BMMilPyUZhqqR6CHqhWLCDqCbglK49D8JVYP85Rya1+zVSDW+g2G5KgeyZPMYaZMPcZDR+2Opq5WdmlotIso208Otdm567LZ9kEoVK91OKrtxSME/bYVdSz8A5+UPmep+mceAAAAAElFTkSuQmCC',

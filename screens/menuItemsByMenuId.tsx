@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from './navigationTypes';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DownNavbar from './downNavbar';
 
 type MenuItemsByMenuIdScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -116,12 +118,12 @@ const MenuItemsByMenuIdScreen = () => {
 
       // Make the API call to add the quantity
       const response = await axios.post(
-        'http://localhost:3002/api/cart/add',
+        'http://10.0.2.2:3002/api/cart/add',
         {
           itemId: item.item.id,
           quantity: newQuantity,
           menuId: menuData?.id,
-          canteenId: 1, // Replace with the actual canteenId if dynamic
+          canteenId: (await AsyncStorage.getItem('canteenId')) || null, // Get canteenId from AsyncStorage
           menuConfigurationId: menuData?.menuConfiguration.id,
         },
         {
@@ -132,12 +134,20 @@ const MenuItemsByMenuIdScreen = () => {
         },
       );
 
+      // Handle case where canteenId is not available
+      if (!(await AsyncStorage.getItem('canteenId'))) {
+        console.warn(
+          'CanteenId not found. Please select a canteen from Dashboard first.',
+        );
+      }
+
       if (response.status === 200) {
-        // Update the quantity locally
         item.item.quantity = newQuantity;
         if (menuData) {
-          setMenuData({...menuData}); // Trigger re-render
+          setMenuData({...menuData});
         }
+        Alert.alert('Success', 'Cart Added successfully!');
+        console.log('Cart updated successfully:', response.data);
       } else {
         setError('Failed to update quantity');
       }
@@ -205,13 +215,6 @@ const MenuItemsByMenuIdScreen = () => {
       <View style={styles.container}>
         <ScrollView>
           {menuData.menuItems.map(item => {
-            const quantity = item.item.quantity || 0; // Default to 0 if undefined
-            const decrementQuantity = () => {
-              if (quantity > item.minQuantity) {
-                item.item.quantity = quantity - 1;
-              }
-            };
-
             return (
               <View key={item.id} style={styles.menuItemContainer}>
                 <Image
@@ -230,32 +233,74 @@ const MenuItemsByMenuIdScreen = () => {
                   <Text style={styles.menuItemType}>
                     Type: {item.item.type.toUpperCase()}
                   </Text>
-                  <View style={{flexDirection: 'row', marginTop: 10}}>
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginTop: 10,
+                    }}>
                     <TouchableOpacity
                       style={{
                         backgroundColor: '#0014A8',
-                        padding: 10,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
                         borderRadius: 5,
-                        marginRight: 10,
-                      }}
-                      onPress={decrementQuantity}>
-                      <Text style={{color: '#fff'}}>-</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={{
-                        backgroundColor: '#0014A8',
-                        padding: 10,
-                        borderRadius: 5,
+                        alignItems: 'center',
                       }}
                       onPress={() => incrementQuantity(item)}>
-                      <Text style={{color: '#fff'}}>+</Text>
+                      <Text style={{color: '#fff', fontWeight: 'bold'}}>
+                        Add to Cart
+                      </Text>
                     </TouchableOpacity>
+
+                    <View style={{alignItems: 'center'}}>
+                      <Text style={{fontWeight: 'bold', marginBottom: 5}}>
+                        Cost: ₹150
+                      </Text>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: '#ddd',
+                            width: 25,
+                            height: 25,
+                            borderRadius: 12.5,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                          <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+                            -
+                          </Text>
+                        </TouchableOpacity>
+
+                        <Text
+                          style={{marginHorizontal: 10, fontWeight: 'bold'}}>
+                          1
+                        </Text>
+
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: '#ddd',
+                            width: 25,
+                            height: 25,
+                            borderRadius: 12.5,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                          <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+                            +
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
                 </View>
               </View>
             );
           })}
         </ScrollView>
+        <DownNavbar />
       </View>
     </>
   );
@@ -265,7 +310,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0014A8',
-    padding: 10,
   },
   loadingText: {
     color: '#fff',
@@ -355,6 +399,9 @@ const styles = StyleSheet.create({
   menuItemQuantity: {
     fontSize: 14,
     marginBottom: 3,
+    color: '#0014A8',
+    marginTop: 5,
+    marginLeft: -10,
   },
   menuItemPrice: {
     fontSize: 16,
