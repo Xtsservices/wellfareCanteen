@@ -1,24 +1,144 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Image,
   StyleSheet,
+  Alert,
+  ScrollView,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native'; // Import useNavigation
+import {useNavigation} from '@react-navigation/native';
 import DownNavbar from './downNavbar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+const {PermissionsAndroid, Platform} = require('react-native');
+const CameraRoll = require('@react-native-camera-roll/camera-roll').default;
+const RNFetchBlob = require('rn-fetch-blob').default;
 
 const PaymentMethod = () => {
-  const navigation = useNavigation(); // Initialize navigation
+  const navigation = useNavigation();
+  const [selectedMethod, setSelectedMethod] = useState<string>('Cash');
+  const [loading, setLoading] = useState(false);
+  const [orderResponse, setOrderResponse] = useState<any>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
 
-  const handlePayment = () => {
-    navigation.navigate('OrderPlaced' as never); // Replace "OrderPlaced" with your screen name
+  const handlePayment = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('authorization');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+      const response = await fetch(
+        'http://10.0.2.2:3002/api/order/placeOrder',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+          body: JSON.stringify({paymentMethod: selectedMethod}),
+        },
+      );
+      const data = await response.json();
+      if (response.ok) {
+        setOrderResponse(data.data);
+        setShowOrderDetails(true);
+        Alert.alert('Order Placed Successfully');
+      } else {
+        Alert.alert('Payment Failed', 'Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not process payment.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const toggleOrderDetails = () => {
+    setShowOrderDetails(!showOrderDetails);
+  };
+
+  async function SaveQrToGallery() {
+    try {
+      Alert.alert('Saving QR Code', 'Saving QR code to gallery...');
+      return;
+      // Request permission on Android
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission Required',
+            message: 'App needs access to your storage to save the QR code.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permission Denied',
+            'Storage permission is required to save the QR code.',
+          );
+          return;
+        }
+      }
+
+      // Extract base64 data from the QR code URI
+      if (!orderResponse || !orderResponse.order.qrCode) {
+        Alert.alert('Error', 'No QR code available to save.');
+        return;
+      }
+      const base64Data = orderResponse.order.qrCode.split(',')[1];
+
+      // Get the directory path
+      const dirs = RNFetchBlob.fs.dirs;
+      const path = `${dirs.DownloadDir}/QRCode_${orderResponse.order.id}.png`;
+
+      // Write the file
+      await RNFetchBlob.fs.writeFile(path, base64Data, 'base64');
+
+      // Save to gallery
+      await CameraRoll.save(path, {type: 'photo'});
+
+      Alert.alert('Success', 'QR code saved to your gallery.');
+    } catch (error) {
+      console.error('Error saving QR code:', error);
+      Alert.alert('Error', 'Failed to save QR code.');
+    }
+  }
 
   return (
     <View style={styles.container}>
+      <View style={styles.header1}>
+        <Text style={styles.headerTitle1}>
+          <Image
+            source={{
+              uri: 'https://www.joinindiannavy.gov.in/images/octaginal-crest.png',
+            }}
+            style={styles.logo}
+          />
+        </Text>
+        <View style={styles.headerIcons1}>
+          <TouchableOpacity style={styles.iconborder1}>
+            <Image
+              source={{
+                uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
+              }}
+              style={styles.icon1}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconborder1}>
+            <Image
+              source={{
+                uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
+              }}
+              style={styles.icon1}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
       <View style={styles.header}>
         <Image
           source={{
@@ -26,44 +146,118 @@ const PaymentMethod = () => {
           }}
           style={styles.logo}
         />
-        <Text style={styles.title}>Payment Method</Text>
+        <Text style={styles.title}>
+          {orderResponse ? 'Order Details' : 'Payment Method'}
+        </Text>
       </View>
 
-      <View style={styles.paymentOptions}>
-        <Image
-          source={{
-            uri: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/PhonePe_Logo.png',
-          }}
-          style={styles.icon}
-        />
-        <Image
-          source={{
-            uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Google_Pay_Logo_%282020%29.svg/1200px-Google_Pay_Logo_%282020%29.svg.png',
-          }}
-          style={styles.icon}
-        />
-        <Image
-          source={{
-            uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Paytm_logo.svg/1200px-Paytm_logo.svg.png',
-          }}
-          style={styles.icon}
-        />
-      </View>
+      {!orderResponse ? (
+        <>
+          <View style={styles.paymentOptions}>
+            <Image
+              source={{
+                uri: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/PhonePe_Logo.png',
+              }}
+              style={styles.icon}
+            />
+            <Image
+              source={{
+                uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Google_Pay_Logo_%282020%29.svg/1200px-Google_Pay_Logo_%282020%29.svg.png',
+              }}
+              style={styles.icon}
+            />
+            <Image
+              source={{
+                uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Paytm_logo.svg/1200px-Paytm_logo.svg.png',
+              }}
+              style={styles.icon}
+            />
+          </View>
 
-      <Text style={styles.orText}>OR</Text>
+          <TouchableOpacity
+            style={[
+              styles.option,
+              selectedMethod === 'Cash' && {
+                borderColor: '#000080',
+                borderWidth: 2,
+              },
+            ]}
+            onPress={() => setSelectedMethod('Cash')}>
+            <Text style={styles.optionText}>Cash</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={styles.option}>
-        <Text style={styles.optionText}>UPI</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.option}>
-        <Text style={styles.optionText}>Wallet</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.payButton}
+            onPress={handlePayment}
+            disabled={loading}>
+            <Text style={styles.payButtonText}>
+              {loading ? 'Processing...' : 'PAY'}
+            </Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={toggleOrderDetails}>
+            <Text style={styles.toggleButtonText}>
+              {showOrderDetails ? 'Hide Order Details' : 'Show Order Details'}
+            </Text>
+          </TouchableOpacity>
 
-      <View style={styles.cardDetails}>
-        <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
-          <Text style={styles.payButtonText}>PAY</Text>
-        </TouchableOpacity>
-      </View>
+          {showOrderDetails && (
+            <ScrollView style={styles.orderDetailsContainer}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Order ID:</Text>
+                <Text style={styles.detailValue}>{orderResponse.order.id}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Total Amount:</Text>
+                <Text style={styles.detailValue}>
+                  ₹{orderResponse.order.totalAmount}
+                </Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Payment Method:</Text>
+                <Text style={styles.detailValue}>
+                  {orderResponse.payment.paymentMethod}
+                </Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Gateway Charges:</Text>
+                <Text style={styles.detailValue}>
+                  ₹{orderResponse.payment.gatewayCharges}
+                </Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Total Paid:</Text>
+                <Text style={styles.detailValue}>
+                  ₹{orderResponse.payment.totalAmount}
+                </Text>
+              </View>
+
+              <View style={styles.qrCodeContainer}>
+                <Text style={styles.qrCodeTitle}>Order QR Code:</Text>
+                <Image
+                  source={{uri: orderResponse.order.qrCode}}
+                  style={styles.qrCodeImage}
+                />
+                <TouchableOpacity
+                  style={[styles.payButton, {marginTop: 20}]}
+                  onPress={SaveQrToGallery}>
+                  <Text style={styles.payButtonText}>
+                    Save QR Code to Gallery
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
+        </>
+      )}
 
       <DownNavbar style={styles.stickyNavbar} />
     </View>
@@ -73,8 +267,8 @@ const PaymentMethod = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000080',
-    padding: 20,
+    backgroundColor: 'white',
+    marginTop: 20,
   },
   header: {
     alignItems: 'center',
@@ -86,7 +280,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   title: {
-    color: '#fff',
+    color: '#010080',
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: 10,
@@ -101,48 +295,59 @@ const styles = StyleSheet.create({
     height: 50,
     resizeMode: 'contain',
   },
-  orText: {
-    color: '#fff',
-    textAlign: 'center',
-    marginVertical: 10,
-    fontSize: 16,
-  },
-  cardDetails: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    color: '#000',
-  },
-  row: {
+  header1: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: '#0014A8',
+    paddingVertical: 20,
+    padding: 30,
   },
-  halfInput: {
-    width: '48%',
+  headerTitle1: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  headerIcons1: {
+    flexDirection: 'row',
+  },
+  icon1: {
+    width: 30,
+    height: 30,
+  },
+  iconborder1: {
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    padding: 7,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   payButton: {
     backgroundColor: '#000080',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
+    width: '80%',
+    marginLeft: '10%',
+    justifyContent: 'center',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   payButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
   option: {
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0',
     padding: 15,
     borderRadius: 5,
     marginBottom: 10,
+    width: '80%',
+    marginLeft: '10%',
+    justifyContent: 'center',
+    textAlign: 'center',
+    alignItems: 'center',
   },
   optionText: {
     color: '#000080',
@@ -157,6 +362,52 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     flexDirection: 'row',
     justifyContent: 'space-around',
+  },
+  toggleButton: {
+    backgroundColor: '#000080',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: '10%',
+    marginBottom: 10,
+  },
+  toggleButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  orderDetailsContainer: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 15,
+    marginHorizontal: '5%',
+    marginBottom: 20,
+    maxHeight: 700,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  detailValue: {
+    color: '#555',
+  },
+  qrCodeContainer: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  qrCodeTitle: {
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  qrCodeImage: {
+    width: 300,
+    height: 300,
+    resizeMode: 'contain',
   },
 });
 

@@ -14,4 +14,5 @@ export type RootStackParamList = {
   NotificationsScreen: undefined;
   VerifyToken: undefined;
   MenubyMenuId: {menuId: string};
+  CallCenter: undefined;
 };
