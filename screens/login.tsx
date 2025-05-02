@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import {Login, ResendOtp, VerifyOtp} from './services/restApi';
+import { Login, ResendOtp, VerifyOtp } from './services/restApi';
 
 type RootStackParamList = {
   SelectCanteen: undefined;
@@ -28,6 +28,7 @@ const LoginScreen = () => {
   const [showResend, setShowResend] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [tokenn, setTokenn] = useState('');
   const navigation = useNavigation<NavigationProp>();
 
   const otpInputs = useRef<Array<TextInput | null>>([]);
@@ -48,14 +49,14 @@ const LoginScreen = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-  
+
     if (value.length === 1 && index < otp.length - 1) {
       otpInputs.current[index + 1]?.focus();
     } else if (value === '' && index > 0) {
       otpInputs.current[index - 1]?.focus();
     }
   };
-  
+
 
   const handleKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === 'Backspace' && otp[index] === '' && index > 0) {
@@ -85,8 +86,8 @@ const LoginScreen = () => {
     try {
       const response = await fetch(Login(), {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({mobile: phoneNumber}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: phoneNumber }),
       });
 
       if (response.ok) {
@@ -115,22 +116,24 @@ const LoginScreen = () => {
     try {
       const response = await fetch(VerifyOtp(), {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({mobile: phoneNumber, otp: enteredOtp}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: phoneNumber, otp: enteredOtp }),
       });
-
-      if (phoneNumber === "9963312760" && otp.join('') === "123456") {
-        navigation.navigate('AdminDashboard');
-        return;
-      }
+      console.log('Response:', response);
+      
 
       const data = await response.json();
 
       if (response.ok) {
-        await AsyncStorage.setItem('authorization', data.token);
         console.log('Token:', data.token);
         showToast('success', 'OTP verified successfully.');
-        navigation.navigate('SelectCanteen');
+
+        if (phoneNumber === "7093081518" && otp.join('') === enteredOtp) {
+          navigation.navigate('AdminDashboard');
+        } else {
+          navigation.navigate('SelectCanteen');
+        }
+        await AsyncStorage.setItem('authorization', data.token);
       } else {
         showToast('error', `Invalid OTP: ${data.message || 'Try again.'}`);
       }
@@ -147,8 +150,8 @@ const LoginScreen = () => {
     try {
       const response = await fetch(ResendOtp(), {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({mobile: phoneNumber}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: phoneNumber }),
       });
 
       if (response.ok) {
@@ -176,6 +179,7 @@ const LoginScreen = () => {
           style={styles.logo}
         />
       </View>
+      
       <Text style={styles.title}>Login or Sign up</Text>
 
       <View style={styles.inputContainer}>
@@ -246,7 +250,7 @@ const LoginScreen = () => {
               )}
             </TouchableOpacity>
           ) : (
-            <Text style={{marginBottom: 10, color: 'gray'}}>
+            <Text style={{ marginBottom: 10, color: 'gray' }}>
               Resend in {timer}s
             </Text>
           )}

@@ -26,6 +26,7 @@ const VerifyTokenScreen = () => {
   const [token, setToken] = useState<string[]>(Array(6).fill(''));
   const navigation = useNavigation<NavigationProp>();
   const inputRefs = useRef<(TextInput | null)[]>([]);
+  console.log('Token:', token);
 
   const handleTokenChange = (value: string, index: number) => {
     const newToken = [...token];

@@ -12,17 +12,19 @@ import OrderPlacedScreen from './screens/orderPlaced';
 import ViewOrders from './screens/viewOrders';
 import PaymentMethod from './screens/paymentsMethod';
 import SettingsScreen from './screens/SettingScreen';
-import AdminDashboard from './screens/canteenAdmin/adminDashboard';
+import AdminDashboard from './screens/canteenAdmin/AdminDashboard';
 import BluetoothControlScreen from './screens/canteenAdmin/scanQr';
 import WalletScreen from './screens/WalletScreen';
 import orderhistory from './screens/orderhistory'
 import NotificationsScreen from './screens/NotificationsScreen';
-import breakfast from './screens/canteenAdmin/breakfast';
+import breakfast from './screens/canteenAdmin/walkin';
 import Users from './screens/canteenAdmin/Users';
 import AddUser from './screens/canteenAdmin/AddUser';
 import WorkerProfile from './screens/canteenAdmin/WorkerProfile'
 import Menu from './screens/canteenAdmin/Menu';
 import Checkout from './screens/canteenAdmin/Checkout'
+import Orders from './screens/canteenAdmin/Orders';
+
 
 
 import VerifyTokenScreen from './screens/canteenAdmin/veifyToken';
@@ -64,6 +66,7 @@ const App = () => {
         <Stack.Screen name="Menu" component={Menu} />
         <Stack.Screen name="WorkerProfile" component={WorkerProfile}/>
         <Stack.Screen name="Checkout" component={Checkout}/>
+        <Stack.Screen name="Orders" component={Orders}/>
         <Stack.Screen
           name="BluetoothControl"
           component={BluetoothControlScreen}

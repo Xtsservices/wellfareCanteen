@@ -1,5 +1,12 @@
 import React, {useEffect, useRef} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Animated} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import {Camera, useCameraDevice} from 'react-native-vision-camera';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -16,6 +23,9 @@ const BluetoothControlScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const animatedValue = useRef(new Animated.Value(0)).current;
 
+  const {height, width} = Dimensions.get('window');
+  const isPortrait = height >= width;
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -29,35 +39,35 @@ const BluetoothControlScreen = () => {
           duration: 2000,
           useNativeDriver: true,
         }),
-      ]),
+      ])
     ).start();
   }, [animatedValue]);
 
   const handleVerifyPress = () => {
-    navigation.navigate('VerifyToken'); // Navigate to the verifyToken screen
+    navigation.navigate('VerifyToken');
   };
 
-  if (device == null) {
-    return <Text>Camera not available</Text>;
+  if (!device) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{color: 'white'}}>Camera not available</Text>
+      </View>
+    );
   }
 
   const translateY = animatedValue.interpolate({
     inputRange: [0.5, 1],
-    outputRange: [0, 250 - 2], // Adjusted to stay within the block height (250px - redLine height)
+    outputRange: [0, 250 - 2],
   });
 
   return (
     <View style={styles.container}>
       {/* Camera Preview */}
       <View style={styles.cameraContainer}>
-        <Camera
-          style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={true}
-        />
+        <Camera style={StyleSheet.absoluteFill} device={device} isActive={true} />
       </View>
 
-      {/* QR Code Overlay */}
+      {/* QR Code Scan Box */}
       <View style={styles.overlay}>
         <View style={styles.qrBlock}>
           <Animated.View
@@ -71,37 +81,17 @@ const BluetoothControlScreen = () => {
         </View>
       </View>
 
-      {/* Overlay Content */}
+      {/* Buttons + Footer */}
       <View style={styles.overlayContent}>
+        <View style={{flex: 1}} />
+
         <View style={styles.tokenContainer}>
-          <TouchableOpacity
-            style={{
-              marginVertical: 30,
-              alignItems: 'center',
-              marginTop: 20,
-              backgroundColor: 'white',
-              padding: 10,
-              borderRadius: 10,
-              width: '80%',
-            }}>
-            <Text style={{fontSize: 20, textAlign: 'center', color: '#010080'}}>
-              Verify
-            </Text>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Verify</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleVerifyPress}
-            style={{
-              marginVertical: 30,
-              alignItems: 'center',
-              marginTop: 20,
-              backgroundColor: 'white',
-              padding: 10,
-              borderRadius: 10,
-              width: '80%',
-            }}>
-            <Text style={{fontSize: 20, textAlign: 'center', color: '#010080'}}>
-              Enter token number
-            </Text>
+
+          <TouchableOpacity onPress={handleVerifyPress} style={styles.button}>
+            <Text style={styles.buttonText}>Show QR Code</Text>
           </TouchableOpacity>
         </View>
 
@@ -141,27 +131,42 @@ const styles = StyleSheet.create({
   },
   overlayContent: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 20,
-    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   tokenContainer: {
-    marginTop: 500,
+    width: '100%',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 20,
   },
-  verifyButtonText: {
-    color: 'white',
+  button: {
+    backgroundColor: 'white',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginVertical: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonText: {
     fontSize: 18,
+    color: '#010080',
     fontWeight: 'bold',
   },
   footer: {
     alignItems: 'center',
-    marginBottom: 20,
+    paddingBottom: 10,
   },
   footerText: {
     color: 'white',
     fontSize: 14,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
   },
 });
 

@@ -1,17 +1,17 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   useWindowDimensions,
   Platform,
-  ScrollView,
-  Image
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigationTypes';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type AdminDashboardNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -20,133 +20,87 @@ type AdminDashboardNavigationProp = StackNavigationProp<
 
 const AdminDashboard = () => {
   const navigation = useNavigation<AdminDashboardNavigationProp>();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
-  // Calculate square size with proper spacing
-  const cardMargin = 16;
-  const squareSize = width < 768 ? 
-    (width - (3 * cardMargin)) / 2 : // 2 cards in row with margins
-    Math.min((width - (5 * cardMargin)) / 4, 200); // Max width 200 on larger screens
+  const orderCount = 5; // Example data — replace with API or Redux state
+  const cardSize = Math.min(width * 0.6, height * 0.6);
+  const isPortrait = height >= width;
+  console.log(AsyncStorage.getItem('authorization'),"tokennn");
+  
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      
       <View style={styles.header}>
-        
         <Text style={styles.headerTitle}>Restaurant Dashboard</Text>
+        <TouchableOpacity
+          style={styles.usersButton}
+          onPress={() => navigation.navigate('Users', { newUser: undefined })}
+        >
+          <Text style={styles.usersButtonText}>Users</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Main Content */}
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={[
-          styles.contentContainer,
-          { paddingHorizontal: cardMargin }
-        ]}
-      >
-        <View style={styles.gridContainer}>
-          {/* Row 1 */}
-          <View style={styles.row}>
-            <TouchableOpacity 
-              style={[
-                styles.squareCard, 
-                { 
-                  width: squareSize, 
-                  height: squareSize,
-                  marginRight: cardMargin,
-                  marginBottom: cardMargin
-                }
-              ]}
-              onPress={() => navigation.navigate('Menu')}
-            >
-              <Image
-                source={{ uri: 'https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg' }}
-                style={styles.cardImage}
-              />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Menu</Text>
-                <Text style={styles.cardDescription}>Manage menu items</Text>
-              </View>
-            </TouchableOpacity>
+      <View style={styles.centerContainer}>
+        <View style={[styles.middleRow, isPortrait && styles.middleColumn]}>
+          {/* QR Scan Card */}
+          <TouchableOpacity
+            style={[
+              styles.squareCard,
+              {
+                width: cardSize,
+                height: cardSize,
+                marginRight: isPortrait ? 0 : 20,
+                marginBottom: isPortrait ? 20 : 0,
+              },
+            ]}
+            onPress={() => navigation.navigate('BluetoothControl')}
+          >
+            <Image
+              source={{
+                uri: 'https://images.pexels.com/photos/1122528/pexels-photo-1122528.jpeg',
+              }}
+              style={styles.cardImage}
+            />
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>Quick Scan</Text>
+              <Text style={styles.cardDescription}>Scan QR Code</Text>
+            </View>
+          </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[
-                styles.squareCard, 
-                { 
-                  width: squareSize, 
-                  height: squareSize,
-                  marginBottom: cardMargin
-                }
-              ]}
-              onPress={() => navigation.navigate('Users')}
-            >
-              <Image
-                source={{ uri: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg' }}
-                style={styles.cardImage}
-              />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Users</Text>
-                <Text style={styles.cardDescription}>Manage staff</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Row 2 */}
-          <View style={styles.row}>
-            <TouchableOpacity 
-              style={[
-                styles.squareCard, 
-                { 
-                  width: squareSize, 
-                  height: squareSize,
-                  marginRight: cardMargin
-                }
-              ]}
-              // onPress={() => navigation.navigate('Orders')}
-            >
-              <Image
-                source={{ uri: 'https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg' }}
-                style={styles.cardImage}
-              />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Orders</Text>
-                <Text style={styles.cardDescription}>Track orders</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                styles.squareCard, 
-                { 
-                  width: squareSize, 
-                  height: squareSize
-                }
-              ]}
-              onPress={() => navigation.navigate('breakfast')}
-            >
-              <Image
-                source={{ uri: 'https://images.pexels.com/photos/4253320/pexels-photo-4253320.jpeg' }}
-                style={styles.cardImage}
-              />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Walk-ins</Text>
-                <Text style={styles.cardDescription}>Manage customers</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          {/* Walk-ins Card */}
+          <TouchableOpacity
+            style={[
+              styles.squareCard,
+              {
+                width: cardSize,
+                height: cardSize,
+              },
+            ]}
+            onPress={() => navigation.navigate('breakfast')}
+          >
+            <Image
+              source={{
+                uri: 'https://images.pexels.com/photos/4253320/pexels-photo-4253320.jpeg',
+              }}
+              style={styles.cardImage}
+            />
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>Walk-ins</Text>
+              <Text style={styles.cardDescription}>Manage customers</Text>
+            </View>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
 
-      {/* Footer */}
-      <TouchableOpacity 
-        style={styles.footer}
-        onPress={() => navigation.navigate('BluetoothControl')}
+      {/* Orders Counter */}
+      <TouchableOpacity
+        style={styles.ordersCounter}
+        onPress={() => navigation.navigate('Orders')}
       >
-        <View style={styles.footerGradient}>
-          <Text style={styles.footerTitle}>Quick Scan</Text>
-          <Text style={styles.footerText}>Scan QR Code or Enter Token Number</Text>
-        </View>
+        <Text style={styles.ordersCounterText}>Orders: {orderCount}</Text>
+        <Text style={styles.ordersCounterSubtext}>Tap to view details</Text>
       </TouchableOpacity>
     </View>
   );
@@ -164,6 +118,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a237e',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     ...Platform.select({
       web: {
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
@@ -177,28 +134,32 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 5,
   },
-  headerSubtitle: {
+  usersButton: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  usersButtonText: {
+    color: '#1a237e',
+    fontWeight: 'bold',
     fontSize: 16,
-    color: '#e8eaf6',
-    opacity: 0.9,
   },
-  scrollView: {
+  centerContainer: {
     flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 40,
   },
-  contentContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  gridContainer: {
-    width: '100%',
-    maxWidth: 500, // Limits the maximum width of the grid
-    alignSelf: 'center',
-  },
-  row: {
+  middleRow: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  middleColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   squareCard: {
     backgroundColor: '#ffffff',
@@ -209,9 +170,6 @@ const styles = StyleSheet.create({
       web: {
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         transition: 'transform 0.2s ease-in-out',
-        ':hover': {
-          transform: 'translateY(-4px)',
-        },
       },
       default: {
         elevation: 4,
@@ -241,11 +199,15 @@ const styles = StyleSheet.create({
     color: '#666666',
     textAlign: 'center',
   },
-  footer: {
-    margin: 20,
-    borderRadius: 15,
-    overflow: 'hidden',
+  ordersCounter: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
     backgroundColor: '#1a237e',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
     ...Platform.select({
       web: {
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -255,20 +217,15 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  footerGradient: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  ordersCounterText: {
     color: '#ffffff',
-    marginBottom: 5,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  footerText: {
-    fontSize: 16,
+  ordersCounterSubtext: {
     color: '#e8eaf6',
-    opacity: 0.9,
+    fontSize: 14,
+    marginTop: 5,
   },
 });
 

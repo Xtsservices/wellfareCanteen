@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigationTypes';
 import { useNavigation } from '@react-navigation/native';
@@ -15,44 +23,75 @@ type CustomInputProps = {
   onChangeText?: (text: string) => void;
 };
 
+const CustomInput: React.FC<CustomInputProps> = ({
+  label,
+  value,
+  secureTextEntry = false,
+  editable = false,
+  containerStyle = {},
+  onChangeText,
+}) => (
+  <View style={[styles.inputContainer, containerStyle]}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput
+      style={[
+        styles.input,
+        { backgroundColor: editable ? '#fff' : '#f0f0f0' },
+      ]}
+      value={value}
+      secureTextEntry={secureTextEntry}
+      editable={editable}
+      onChangeText={onChangeText}
+    />
+  </View>
+);
+
 const WorkerProfile: React.FC<WorkerProfileScreenProps> = ({ route }) => {
   const { user } = route.params;
   const navigation = useNavigation();
+
   const [editMode, setEditMode] = useState(false);
 
   const [formData, setFormData] = useState({
     name: user.name || '',
-    dob: user.dob ? user.dob.toString() : '',
+    dob: user.dob ? String(user.dob) : '',
     gender: user.gender || '',
     mobile: user.mobile || '',
     email: user.email || '',
-    aadhaar: user.aadhar ? user.aadhar.toString() : '',
+    aadhaar: user.aadhar ? String(user.aadhar) : '',
     adminName: user.adminName || '',
-    adminId: user.adminId ? user.adminId.toString() : '',
+    adminId: user.adminId ? String(user.adminId) : '',
     address: user.address || '',
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-
       <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity 
+          style={styles.backArrowContainer} 
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <View style={styles.profilePicContainer}>
-          <Image source={{ uri: 'https://placekitten.com/200/200' }} style={styles.profilePic} />
+          <Image
+            source={{ uri: 'https://placekitten.com/200/200' }}
+            style={styles.profilePic}
+          />
         </View>
       </View>
 
       <View style={styles.formContainer}>
-        <CustomInput label="Name" value={formData.name} editable={editMode} onChangeText={text => handleInputChange('name', text)} />
+        <CustomInput
+          label="Name"
+          value={formData.name}
+          editable={editMode}
+          onChangeText={text => handleInputChange('name', text)}
+        />
         <View style={styles.row}>
           <CustomInput
             label="Date of Birth"
@@ -69,44 +108,61 @@ const WorkerProfile: React.FC<WorkerProfileScreenProps> = ({ route }) => {
             onChangeText={text => handleInputChange('gender', text)}
           />
         </View>
-        <CustomInput label="Mobile Number" value={formData.mobile} editable={editMode} onChangeText={text => handleInputChange('mobile', text)} />
-        <CustomInput label="Email" value={formData.email} editable={editMode} onChangeText={text => handleInputChange('email', text)} />
-        <CustomInput label="Aadhaar Card" value={formData.aadhaar} editable={editMode} onChangeText={text => handleInputChange('aadhaar', text)} />
-        <CustomInput label="Address" value={formData.address} editable={editMode} onChangeText={text => handleInputChange('address', text)} />
-        <CustomInput label="Admin Name" value={formData.adminName} editable={editMode} onChangeText={text => handleInputChange('adminName', text)} />
-        <CustomInput label="Admin ID" value={formData.adminId} editable={editMode} onChangeText={text => handleInputChange('adminId', text)} />
+        <CustomInput
+          label="Mobile Number"
+          value={formData.mobile}
+          editable={editMode}
+          onChangeText={text => handleInputChange('mobile', text)}
+        />
+        <CustomInput
+          label="Email"
+          value={formData.email}
+          editable={editMode}
+          onChangeText={text => handleInputChange('email', text)}
+        />
+        <CustomInput
+          label="Aadhaar Card"
+          value={formData.aadhaar}
+          editable={editMode}
+          onChangeText={text => handleInputChange('aadhaar', text)}
+        />
+        <CustomInput
+          label="Address"
+          value={formData.address}
+          editable={editMode}
+          onChangeText={text => handleInputChange('address', text)}
+        />
+        <CustomInput
+          label="Admin Name"
+          value={formData.adminName}
+          editable={editMode}
+          onChangeText={text => handleInputChange('adminName', text)}
+        />
+        <CustomInput
+          label="Admin ID"
+          value={formData.adminId}
+          editable={editMode}
+          onChangeText={text => handleInputChange('adminId', text)}
+        />
 
-        <TouchableOpacity style={styles.editButton} onPress={() => setEditMode(!editMode)}>
-          <Text style={styles.editButtonText}>{editMode ? 'SAVE' : 'EDIT'}</Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => setEditMode(!editMode)}
+        >
+          <Text style={styles.editButtonText}>
+            {editMode ? 'SAVE' : 'EDIT'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.footer}>
-        proposed by <Text style={{ color: 'orange' }}>workist</Text>
-      </Text>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          proposed by <Text style={{ color: 'orange' }}>workist</Text>
+        </Text>
+      </View>
     </ScrollView>
   );
 };
-
-const CustomInput: React.FC<CustomInputProps> = ({
-  label,
-  value,
-  secureTextEntry = false,
-  editable = false,
-  containerStyle = {},
-  onChangeText,
-}) => (
-  <View style={[styles.inputContainer, containerStyle]}>
-    <Text style={styles.label}>{label}</Text>
-    <TextInput
-      style={[styles.input, { backgroundColor: editable ? '#fff' : '#f9f9f9' }]}
-      value={value}
-      secureTextEntry={secureTextEntry}
-      editable={editable}
-      onChangeText={onChangeText}
-    />
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -116,41 +172,54 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#0a0a91',
-    height: 100,
+    height: 150,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
+  backArrowContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 16,
+    zIndex: 1,
+  },
+  backArrow: {
+    fontSize: 24,
+    color: '#fff',
+  },
   profilePicContainer: {
-    marginTop: 50,
+    marginTop: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
   },
   profilePic: {
     width: 100,
     height: 100,
     borderRadius: 50,
     backgroundColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   formContainer: {
     padding: 16,
+    marginTop: 20,
   },
   inputContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
     color: '#555',
     marginBottom: 4,
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
     fontSize: 16,
   },
   row: {
@@ -158,32 +227,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginTop: 24,
     alignSelf: 'center',
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#0a0a91',
     borderRadius: 8,
-    backgroundColor: '#eee',
   },
   editButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 8,
-  },
-  backArrow: {
-    fontSize: 24,
     color: '#fff',
-    position: 'absolute',
-    left: 16,
-    top: 16,
   },
   footer: {
-    textAlign: 'center',
+    alignItems: 'center',
     marginTop: 20,
+    marginBottom: 10,
+  },
+  footerText: {
     fontSize: 12,
     color: '#aaa',
   },

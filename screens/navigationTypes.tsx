@@ -27,6 +27,13 @@ export interface CheckoutCartItem {
 }
 
 export type RootStackParamList = {
+  MenuDetails: {
+    menuId: string;
+    menuName: string;
+    menuDescription: string;
+    menuPrice: number;
+    menuCurrency: string;
+  };
   SettingsScreen: undefined;
   LoginScreen: undefined;
   ProfileScreen: undefined;
@@ -37,23 +44,12 @@ export type RootStackParamList = {
   BluetoothControl: undefined;
   AdminDashboard: undefined;
   Breakfast: undefined;
-  Users: undefined;
+  // Cart: undefined; 
+  Users: { newUser?: { name: string; mobile: string; position?: string; address?: string } };
+
   WorkerProfile: { 
+    
     user:any 
-    // {
-      
-    //   id: number;
-    //   name: string;
-    //   mobile: string;
-    //   position: string;
-    //   email: string;
-    //   address: string;
-    //   dob: string;
-    //   gender: string;
-    //   aadhar: string;
-    //   adminName: string;
-    //   adminId: string;
-    // }
   };
   AddUser: { onAddUser: (user: any) => void };
   Menu: undefined;
@@ -73,5 +69,5 @@ export type RootStackParamList = {
   orderhistory: undefined;
   MenuItemsByMenuId: { menuId: string };
   breakfast: undefined;
-  
+  Orders : undefined;
 };
