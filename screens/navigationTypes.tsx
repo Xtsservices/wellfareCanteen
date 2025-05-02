@@ -70,4 +70,5 @@ export type RootStackParamList = {
   MenuItemsByMenuId: { menuId: string };
   breakfast: undefined;
   Orders : undefined;
+  CallCenter: undefined;
 };

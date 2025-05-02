@@ -7,7 +7,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './screens/login';
 import SelectCanteenScreen from './screens/selectCanteen';
 import Dashboard from './screens/dashboard';
-import CartPage from './screens/cartPage';
 import OrderPlacedScreen from './screens/orderPlaced';
 import ViewOrders from './screens/viewOrders';
 import PaymentMethod from './screens/paymentsMethod';
@@ -28,8 +27,12 @@ import Orders from './screens/canteenAdmin/Orders';
 
 
 import VerifyTokenScreen from './screens/canteenAdmin/veifyToken';
-import MenuItemsByMenuIdScreen from './screens/menuItemsByMenuId';
+// import MenuItemsByMenuIdScreen2 from './screens/menuItemByMenuIdScreen';
+// import MenuItemsByMenuIdScreen2 from './screens/menuItemsByMenuId';
+import MenuItemsByMenuIdScreenNew from './screens/menuItemByMenuIdScreen';
+import CartPageTwo from './screens/cartPageScreen';
 import {RootStackParamList} from './screens/navigationTypes'; // Adjust the
+import CallCenterScreen from './screens/callCenter';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -48,10 +51,11 @@ const App = () => {
         />
         <Stack.Screen
           name="MenubyMenuId"
-          component={MenuItemsByMenuIdScreen}
+          // component={MenuItemsByMenuIdScreen}
+          component={MenuItemsByMenuIdScreenNew}
           initialParams={{menuId: undefined}} // Pass menuId as initial param
         />
-        <Stack.Screen name="CartPage" component={CartPage} />
+        <Stack.Screen name="CartPage" component={CartPageTwo} />
         <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} />
         <Stack.Screen name="ViewOrders" component={ViewOrders} />
         <Stack.Screen name="PaymentMethod" component={PaymentMethod} />
@@ -60,6 +64,13 @@ const App = () => {
         <Stack.Screen name="orderhistory" component={orderhistory} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen}/>
         <Stack.Screen name="breakfast" component={breakfast}/>
+        <Stack.Screen
+          name="NotificationsScreen"
+          component={NotificationsScreen}
+        />
+        <Stack.Screen name="CallCenter" component={CallCenterScreen} />
+
+        {/* Canteen Admin */}
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen name="Users" component={Users} />
         <Stack.Screen name="AddUser" component={AddUser} />

@@ -1,5 +1,12 @@
 import React from 'react';
-import {View, Text, FlatList, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import DownNavbar from './downNavbar';
 
 export interface Order {
@@ -48,8 +55,36 @@ const ViewOrders: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <Text style={styles.headerTitle}>
+          <Image
+            source={{
+              uri: 'https://www.joinindiannavy.gov.in/images/octaginal-crest.png',
+            }}
+            style={styles.logo}
+          />
+        </Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconborder}>
+            <Image
+              source={{
+                uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
+              }}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconborder}>
+            <Image
+              source={{
+                uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
+              }}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={styles.header1}>
         {/* <Icon name="arrow-back" size={24} color="#fff" /> */}
-        <Text style={styles.headerTitle}>Orders History</Text>
+        <Text style={styles.headerTitle1}>Orders History</Text>
       </View>
       <FlatList
         data={orders}
@@ -71,20 +106,53 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 50,
   },
-  header: {
-    backgroundColor: '#000080',
+  listContainer: {
     padding: 16,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0014A8',
+    paddingVertical: 20,
+    padding: 30,
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 16,
   },
-  listContainer: {
-    padding: 16,
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+  },
+  icon: {
+    width: 30,
+    height: 30,
+  },
+  iconborder: {
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    padding: 7,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header1: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0014A8',
+    paddingVertical: 20,
+    padding: 30,
+  },
+  headerTitle1: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   orderItem: {
     flexDirection: 'row',

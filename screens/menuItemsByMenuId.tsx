@@ -14,6 +14,7 @@ import {RootStackParamList} from './navigationTypes';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DownNavbar from './downNavbar';
+import { SettingsScreenuri ,menuItemUri} from './imageUris/uris';
 
 type MenuItemsByMenuIdScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -30,6 +31,9 @@ type MenuItemsByMenuIdScreenRouteProp = RouteProp<
 interface MenuItem {
   id: string;
   item: {
+    minQuantity: any;
+    maxQuantity: any;
+    pricing: any;
     id: string;
     name: string;
     description: string;
@@ -67,9 +71,14 @@ const MenuItemsByMenuIdScreen = () => {
   const [menuData, setMenuData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [cartId, setCartId] = useState<string | null>(null);
+  const [itemId, setItemId] = useState<string | null>(null);
+  const [cartData, setCartData] = useState<any>(null); // Adjust type as needed
+  const [cartItemIds, setCartItemIds] = useState<Record<string, number>>({});
 
   const {menuId} = route.params;
-
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
@@ -92,6 +101,24 @@ const MenuItemsByMenuIdScreen = () => {
         if (response.data && response.data.data) {
           setMenuData(response.data.data);
           console.log('Menu data fetched successfully:', response.data.data);
+          if (
+            response.data.data.menuItems &&
+            Array.isArray(response.data.data.menuItems)
+          ) {
+            const updatedMenuItems = response.data.data.menuItems.map(
+              (item: MenuItem) => ({
+                ...item,
+                minQuantity: item.minQuantity,
+                maxQuantity: item.maxQuantity,
+              }),
+            );
+            setMenuData({
+              ...response.data.data,
+              menuItems: updatedMenuItems,
+            });
+          } else {
+            setMenuData(response.data.data);
+          }
         } else {
           setError('No menu data found');
         }
@@ -106,7 +133,21 @@ const MenuItemsByMenuIdScreen = () => {
     fetchMenuItems();
   }, [menuId]);
 
-  const incrementQuantity = async (item: MenuItem) => {
+  useEffect(() => {
+    const loadCartId = async () => {
+      try {
+        const storedCartId = await AsyncStorage.getItem('cartId');
+        if (storedCartId) {
+          setCartId(storedCartId);
+        }
+      } catch (error) {
+        console.error('Failed to load cartId from storage:', error);
+      }
+    };
+    loadCartId();
+  }, []);
+
+  const addToCart = async (item: MenuItem) => {
     try {
       const token = await AsyncStorage.getItem('authorization');
       if (!token) {
@@ -114,18 +155,31 @@ const MenuItemsByMenuIdScreen = () => {
         return;
       }
 
-      const newQuantity = item.item.quantity + 1;
+      const canteenId = await AsyncStorage.getItem('canteenId');
+      const minQty = Number(item.minQuantity) || 1;
 
-      // Make the API call to add the quantity
+      const payload = {
+        itemId: Number(item.item.id),
+        quantity: minQty,
+        menuId: Number(menuData?.id),
+        canteenId: Number(canteenId),
+        menuConfigurationId: Number(menuData?.menuConfiguration.id),
+      };
+
       const response = await axios.post(
         'http://10.0.2.2:3002/api/cart/add',
+        payload,
         {
-          itemId: item.item.id,
-          quantity: newQuantity,
-          menuId: menuData?.id,
-          canteenId: (await AsyncStorage.getItem('canteenId')) || null, // Get canteenId from AsyncStorage
-          menuConfigurationId: menuData?.menuConfiguration.id,
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
         },
+      );
+      console.log(response, 'response');
+
+      const cartDataResponse = await axios.get(
+        'http://10.0.2.2:3002/api/cart/getCart',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -134,22 +188,127 @@ const MenuItemsByMenuIdScreen = () => {
         },
       );
 
-      // Handle case where canteenId is not available
-      if (!(await AsyncStorage.getItem('canteenId'))) {
-        console.warn(
-          'CanteenId not found. Please select a canteen from Dashboard first.',
-        );
+      console.log(cartDataResponse, 'cartDataResponse');
+      const cartItem = cartDataResponse.data.data.cartItems.find(
+        (cartItem: any) => cartItem.itemId === item.item.id,
+      );
+
+      const cartId = cartItem ? cartItem.cartId : null;
+
+      if (cartId) {
+        await AsyncStorage.setItem('cartId', String(cartId));
+        setCartId(String(cartId));
+      }
+      const itemId = cartItem.item.id;
+
+      if (itemId) {
+        await AsyncStorage.setItem('itemId', String(itemId));
+        setItemId(String(itemId));
       }
 
-      if (response.status === 200) {
-        item.item.quantity = newQuantity;
+      if (response.data && response.data.data) {
+        const newCartId = String(response.data.data.id);
+        await AsyncStorage.setItem('cartId', newCartId);
+        setCartId(newCartId);
+
+        // Update UI state
+        setAddedItems(prev => ({
+          ...prev,
+          [item.id]: true,
+        }));
+        setQuantities(prev => ({
+          ...prev,
+          [item.id]: minQty,
+        }));
+
         if (menuData) {
-          setMenuData({...menuData});
+          const updatedMenuItems = menuData.menuItems.map(menuItem => {
+            if (menuItem.id === item.id) {
+              return {
+                ...menuItem,
+                item: {
+                  ...menuItem.item,
+                  quantity: minQty,
+                },
+              };
+            }
+            return menuItem;
+          });
+          setMenuData({
+            ...menuData,
+            menuItems: updatedMenuItems,
+          });
         }
-        Alert.alert('Success', 'Cart Added successfully!');
-        console.log('Cart updated successfully:', response.data);
       } else {
-        setError('Failed to update quantity');
+        setError('Failed to add item to cart');
+      }
+    } catch (err) {
+      setError('Failed to add item to cart');
+      console.error('Error adding to cart:', err);
+    }
+  };
+
+  // Increment quantity
+  const increaseQuantity = async (item: MenuItem) => {
+    try {
+      const currentQty = quantities[item.id] || Number(item.minQuantity) || 1;
+      const maxQty = Number(item.maxQuantity) || 99;
+
+      if (currentQty >= maxQty) {
+        Alert.alert('Maximum quantity reached');
+        return;
+      }
+
+      const newQty = currentQty + 1;
+      const token = await AsyncStorage.getItem('authorization');
+
+      if (!token || !cartId) {
+        setError('No authentication token or cartId found');
+        return;
+      }
+
+      // Fetch the cart to get the correct cartItemId for this item
+      const cartResponse = await axios.get(
+        'http://10.0.2.2:3002/api/cart/getCart',
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+        },
+      );
+      const cartItem = cartResponse.data.data.cartItems.find(
+        (cartItem: any) => cartItem.itemId === item.item.id,
+      );
+      if (!cartItem) {
+        setError('Cart item not found');
+        return;
+      }
+
+      const payload = {
+        cartId: Number(cartId),
+        cartItemId: Number(itemId),
+        quantity: newQty + 1,
+      };
+      console.log(payload, 'payload');
+
+      const response = await axios.post(
+        'http://10.0.2.2:3002/api/cart/updateCartItem',
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+        },
+      );
+
+      if (response.data && response.data.success) {
+        setQuantities(prev => ({
+          ...prev,
+          [item.id]: newQty,
+        }));
+        console.log(response.data, 'response.data');
       }
     } catch (err) {
       setError('Failed to update quantity');
@@ -157,10 +316,88 @@ const MenuItemsByMenuIdScreen = () => {
     }
   };
 
-  // Function to format timestamp to readable time
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp * 1000); // Convert to milliseconds
-    return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  const decreaseQuantity = async (item: MenuItem) => {
+    try {
+      const currentQty = quantities[item.id] || Number(item.minQuantity) || 1;
+      const minQty = Number(item.minQuantity) || 1;
+
+      if (currentQty <= minQty) {
+        // Remove item from cart if quantity would go below minimum
+        const token = await AsyncStorage.getItem('authorization');
+        if (!token || !cartId) {
+          setError('No authentication token or cartId found');
+          return;
+        }
+
+        const payload = {
+          cartId: Number(cartId),
+          cartItemId: Number(itemId),
+        };
+
+        const response = await axios.post(
+          'http://10.0.2.2:3002/api/cart/removeCartItem',
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: token,
+            },
+          },
+        );
+
+        if (response.data && response.data.success) {
+          setAddedItems(prev => {
+            const updated = {...prev};
+            delete updated[item.id];
+            return updated;
+          });
+          setQuantities(prev => {
+            const updated = {...prev};
+            delete updated[item.id];
+            return updated;
+          });
+        } else {
+          setError('Failed to remove item from cart');
+        }
+      } else {
+        // Just decrease quantity
+        const newQty = currentQty - 1;
+        const token = await AsyncStorage.getItem('authorization');
+        if (!token || !cartId) {
+          setError('No authentication token or cartId found');
+          return;
+        }
+
+        const payload = {
+          cartId: Number(cartId),
+          cartItemId: Number(itemId),
+          quantity: newQty,
+        };
+
+        const response = await axios.post(
+          'http://10.0.2.2:3002/api/cart/updateCartItem',
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: token,
+            },
+          },
+        );
+
+        if (response.data && response.data.success) {
+          setQuantities(prev => ({
+            ...prev,
+            [item.id]: newQty,
+          }));
+        } else {
+          setError('Failed to update quantity');
+        }
+      }
+    } catch (err) {
+      setError('Failed to update quantity');
+      console.error('Error updating quantity:', err);
+    }
   };
 
   if (loading) {
@@ -194,8 +431,7 @@ const MenuItemsByMenuIdScreen = () => {
         <View style={styles.headerIcon}>
           <TouchableOpacity style={styles.iconborder}>
             <Image
-              source={{
-                uri: 'data:image/png;base64,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',
+              source={{uri:menuItemUri
               }}
               style={styles.icon}
             />
@@ -205,101 +441,86 @@ const MenuItemsByMenuIdScreen = () => {
             onPress={() => navigation.navigate('SettingsScreen')}>
             <Image
               source={{
-                uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAkFBMVEX///8WFhgAAAD8/PwYGBoUFBYaGhwWFRn5+fkXFxgXFhrz8/MNDRDo6OgAAAQXFhvc3NwlJSfNzc6VlZWNjY1wcHDi4uLQ0NGhoaNKSkxVVVUTExPu7u+7u7uwsLH///yBgYNCQkR1dXfBwcEtLS9eXl6ZmZloaGg1NTdFRUWpqas9PTxQUE8rKy2Dg4VxcXOWoZakAAAP80lEQVR4nO1diWKjug4Fgyk0hhLShKRtMmnI1nX+/++e5AWysWUwTe/zubfTBYJ9sCzJsmxbloGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBQdf4H/6S2ivGU8GYAAAAAElFTkSuQmCC',
-              }}
+                uri: SettingsScreenuri}}
               style={styles.icon}
             />
           </TouchableOpacity>
         </View>
       </View>
+
       <View style={styles.container}>
-        <ScrollView>
-          {menuData.menuItems.map(item => {
-            return (
-              <View key={item.id} style={styles.menuItemContainer}>
-                <Image
-                  source={{
-                    uri: item.item.image
-                      ? `data:image/png;base64,${item.item.image}`
-                      : 'https://via.placeholder.com/150',
-                  }}
-                  style={styles.menuItemImage}
-                />
-                <View style={styles.menuItemDetails}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          {menuData.menuItems.map((item, index) => (
+            <View key={item.id} style={styles.menuCardRow}>
+              {/* Image on the left */}
+              <Image
+                source={{
+                  uri: item.item.image
+                    ? `data:image/png;base64,${item.item.image}`
+                    : 'https://via.placeholder.com/120',
+                }}
+                style={styles.menuItemImage}
+              />
+              {/* Details on the right */}
+              <View style={styles.menuCardDetails}>
+                <View style={styles.menuItemHeaderRow}>
                   <Text style={styles.menuItemName}>{item.item.name}</Text>
-                  <Text style={styles.menuItemDescription}>
-                    {item.item.description}
+                  <Text style={styles.menuItemPrice}>
+                    ₹{item.item.pricing.price}
                   </Text>
+                </View>
+                <View style={styles.vegIconRow}>
+                  <Image
+                    source={{
+                      uri:
+                        item.item.type.toLowerCase() === 'veg'
+                          ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
+                          : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
+                    }}
+                    style={{width: 18, height: 18, marginRight: 8}}
+                  />
                   <Text style={styles.menuItemType}>
-                    Type: {item.item.type.toUpperCase()}
+                    {item.item.type.toUpperCase()}
                   </Text>
-
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      marginTop: 10,
-                    }}>
+                </View>
+                <Text style={styles.menuItemDescription}>
+                  {item.item.description}
+                </Text>
+                <View style={styles.addButtonContainerRow}>
+                  {!addedItems[item.id] ? (
                     <TouchableOpacity
-                      style={{
-                        backgroundColor: '#0014A8',
-                        paddingVertical: 8,
-                        paddingHorizontal: 12,
-                        borderRadius: 5,
-                        alignItems: 'center',
-                      }}
-                      onPress={() => incrementQuantity(item)}>
-                      <Text style={{color: '#fff', fontWeight: 'bold'}}>
-                        Add to Cart
-                      </Text>
+                      style={styles.addButton}
+                      onPress={() => addToCart(item)}>
+                      <Text style={styles.addButtonText}>ADD</Text>
                     </TouchableOpacity>
-
-                    <View style={{alignItems: 'center'}}>
-                      <Text style={{fontWeight: 'bold', marginBottom: 5}}>
-                        Cost: ₹150
+                  ) : (
+                    <View style={styles.quantityControlRow}>
+                      <TouchableOpacity
+                        style={styles.quantityButton}
+                        onPress={() => decreaseQuantity(item)}>
+                        <Text style={styles.quantityButtonText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.quantityText}>
+                        {quantities[item.id] || item.minQuantity}
                       </Text>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: '#ddd',
-                            width: 25,
-                            height: 25,
-                            borderRadius: 12.5,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                          <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-                            -
-                          </Text>
-                        </TouchableOpacity>
-
-                        <Text
-                          style={{marginHorizontal: 10, fontWeight: 'bold'}}>
-                          1
-                        </Text>
-
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: '#ddd',
-                            width: 25,
-                            height: 25,
-                            borderRadius: 12.5,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                          <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-                            +
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
+                      <TouchableOpacity
+                        style={styles.quantityButton}
+                        onPress={() => increaseQuantity(item)}>
+                        <Text style={styles.quantityButtonText}>+</Text>
+                      </TouchableOpacity>
                     </View>
-                  </View>
+                  )}
                 </View>
               </View>
-            );
-          })}
+            </View>
+          ))}
         </ScrollView>
+        {/* Go to Cart Button */}
+        {Object.keys(addedItems).length > 0 && (
+          <TouchableOpacity style={[styles.goToCartButton]} activeOpacity={0.8}>
+            <Text style={styles.goToCartButtonText}>Go to Cart</Text>
+          </TouchableOpacity>
+        )}
         <DownNavbar />
       </View>
     </>
@@ -309,18 +530,15 @@ const MenuItemsByMenuIdScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0014A8',
+    backgroundColor: '#fff',
   },
-  loadingText: {
-    color: '#fff',
-    textAlign: 'center',
-    marginTop: 20,
+  scrollContainer: {
+    paddingBottom: 80, // Space for navbar
   },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-  },
+  // menuItemImage: {
+  //   width: 120,
+  //   height: 120,
+  // },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -335,6 +553,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  headerIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   icon: {
     width: 30,
     height: 30,
@@ -347,70 +569,172 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuInfoContainer: {
+  menuCard: {
+    padding: 16,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
   },
-  menuDescription: {
-    fontSize: 14,
-    marginBottom: 5,
+  bestsellerTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  menuTiming: {
+  bestsellerText: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#FFA500',
   },
-  menuType: {
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
-  menuItemContainer: {
+  menuItemHeader: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  menuItemImage: {
-    width: 150,
-    height: 150,
-  },
-  menuItemDetails: {
-    flex: 1,
-    padding: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   menuItemName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#333',
+    flex: 1,
+  },
+  menuItemPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 16,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#666',
   },
   menuItemDescription: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  typeContainer: {
+    marginBottom: 16,
   },
   menuItemType: {
     fontSize: 12,
     color: '#888',
-    marginBottom: 3,
   },
-  menuItemQuantity: {
-    fontSize: 14,
-    marginBottom: 3,
-    color: '#0014A8',
-    marginTop: 5,
-    marginLeft: -10,
+  addButtonContainer: {
+    alignItems: 'flex-end',
   },
-  menuItemPrice: {
-    fontSize: 16,
+  addButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 4,
+  },
+  addButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
-    color: '#0014A8',
+    fontSize: 14,
   },
-  headerIcon: {
+  quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 4,
+    padding: 4,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  quantityButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  quantityText: {
+    marginHorizontal: 12,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 16,
+  },
+  loadingText: {
+    color: '#333',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  menuCardRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 16,
+    alignItems: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  menuItemImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  menuCardDetails: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  menuItemHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  vegIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  addButtonContainerRow: {
+    marginTop: 8,
+    alignItems: 'flex-start',
+  },
+  quantityControlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 4,
+    padding: 4,
+  },
+  goToCartButton: {
+    position: 'absolute',
+    bottom: 70,
+    left: 20,
+    right: 20,
+    backgroundColor: '#0014A8',
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+    zIndex: 10,
+    elevation: 5,
+  },
+  goToCartButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
   },
 });
 
