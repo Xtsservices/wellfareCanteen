@@ -64,10 +64,6 @@ const App = () => {
         <Stack.Screen name="orderhistory" component={orderhistory} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen}/>
         <Stack.Screen name="breakfast" component={breakfast}/>
-        <Stack.Screen
-          name="NotificationsScreen"
-          component={NotificationsScreen}
-        />
         <Stack.Screen name="CallCenter" component={CallCenterScreen} />
 
         {/* Canteen Admin */}
