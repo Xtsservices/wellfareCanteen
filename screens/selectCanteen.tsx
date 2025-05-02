@@ -31,7 +31,7 @@ const SelectCanteenScreen = () => {
   useEffect(() => {
     const fetchCanteens = async () => {
       try {
-        const token = await AsyncStorage.getItem('authorization'); // Retrieve token from AsyncStorage
+        const token = await AsyncStorage.getItem('authorization'); 
         if (!token) {
           console.error('No token found');
           return;
