@@ -164,10 +164,7 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
             />
           </Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.iconborder}
-              onPress={() => navigation.navigate('WalletScreen')}
-            >
+            <TouchableOpacity style={styles.iconborder}>
               <Image
                 source={{
                   uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
@@ -193,7 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
             source={{
               uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAh1BMVEX///8AAACNjY12dnbf39+/v7+7u7v19fX5+fmSkpK1tbXn5+f8/PxycnKOjo4xMTFFRUWnp6eurq7Nzc1dXV1WVlbu7u6cnJzT09Pk5OTExMSkpKSdnZ2WlpYfHx88PDwUFBQoKCiEhIRjY2NPT09ra2t+fn4sLCwLCws4ODgTExMbGxtJSUlXBj3cAAAKpUlEQVR4nO1daVdqOwxlFGS4TDIqICo4/v/fdxlEodnt6ZC0HBf703tLXtp9OmVpmhQKV7igssWsXT6gPd39M3WX2DCZ3XRfXooUy5ev3myWunthqPXKxUfA7RSPxedeM3VHvTDq/cvgdoJOaTZK3WE3NDdre3rfGN7nZmXWqh1nege89/NwXyddT3oHlKut1AyMqN0H0Tvg9nKXZH38yUBwi9KFcpzz0NvjqZ6aDUGLY35eMscHZn47lFKTOsHkS4DgVg+opib2jfqTCL8dytex5czE+O3QS348Np9FCW4tkMQEKy6dXcxvD5i76D1vSQ2ssk0XV4tho08XVYtjo0wXV6jXWnyubAP8SMDugOcxmN+ybh2BQzRZSvEu04QyyOvY1b9Ys5DQr5bssURNxNgDjjE5tXD78ZJ9BpZTFeGhhJti+cRY4MB+r0SmaCL62p14yR0aOG2YGZtRNk6rvf0jXSgb3QMxRrK/0/egFyq7qbcx1NB+HgOCaQfxG//n8Zr8z9AQ7PB9Z7+odssjPhG4NPrrvnzpotfk2WxMG6HbRjc3pbh10DRCJoobgG7fy2NdQFN9RdSPI76+uaDZVYYoaXfRZpLFSrI95giZuM/QM1EFDUfLMwJbOQKw9PGVkZswe2OCVtGymsMUnqeawy0LWdMPrQsjNiBuTm6KmVmXagl41aYKaiZqU8PlDTSqGdwFSfOBvp56K4NYyBi0v+J1TyP6Wn6IHoC2O/ciYgEakDnoKFNbRYG4D3C4JHrwESLvhbQHdD/K2YEYNqOGshlSLyn+LG/1SA5+Y020DrrBjXyb0aBc4/Yuy0u0Aoqz4BpFGWdyzuiys0HqTW4ngsOdzOtkDKFVcxz71XHSYJLuBeqeYBhHs1GkC7IBqw9MRupFyeLZ9QCcTj1uKfjkeuR4AhyLHIFKNNJ4+qrJuNn0GqfQSgUGoJ+igMijHVCjHZ/MFvTMKN/anqsjXpFFKAkuGXMpGuf7Rgm6noRKpqyvSLaUGVL8K9aSQC9m0QwgU8FAjhwhMoZGeghxer2HyqJuLp58BIKdXmDyN2J3x7UIVRIsNmFXEyQXslanwkUb/vgsSp0r7Qj+qFaMekWqfOiGHPFFo5uhX47iLk0zTEDuYLHOryke0psjuNw4Qpl6JrpJ5Zx15g1UZhDzNUGSgmabfyA9rwAHGAB8hS33gis+IuOkPigPcXRTQH8CxU36IzJLqyv/tdNalX4DfzwGnihbqq73jf11yo0hagN+8xGdL7dn8bUVUBwUbzWDGR1XE1rMf/Xc3qgsWXkod97T6gux4gDikvSWpDsJVuAqcJl0iolK8gouOCpz2HP7wEdTi8Y76bKRGk/0lQh92hbqa+sZIWDB/+PMPjrhZ5M+Vi6G5Z4Hg8/inzVsPF8K3IAcbh8U/doA47Y8HEULWdbskvfkPO4kZmNGIx/FXrYsWAHaAy9FVqXBjGNfNVhr6LhIXhMWpwRhKGUfMfJGEY9Y1ninXIF9tiA9Vw9b20zT4Pbxha8cG70jPfJeIYWBHZfvZtwzrtBPi6aVnDiIOYiGHEM/5EDNkjr/UQY0gG6fwKATkbRUBeYHjrjMuFULWRzv8eaxDZ/DQWvjaultxAfPHe0tQnCFS9Vq7fIik2qr/001uSen1IJakBPHECT/l83tn3FuptZdiduiVaqi/e/96C+JbJnkUeYsQwMQjd00BYlHq/SHtP3nwFeHYJ0/1A2Spo6tsm95WvsvnOyRcNkKUuqRp92tkX0jdgB3UFkN2cBGLQV1q9O2stO+UrP2QSAUyQvRz0SfzAs87z8AaT0NcUHCagYTesl4p1fz9DGqOBHbQjVn1BGzxIUmRBQyFnMHkRKS+GvRg/k5yoqhcqcN3bxJei5KQf8hRVg2fUHc7yfVB5MOvBm9RE5XYhihAxAdm4QNYNsBLl1iJpLDSml74Xg/NvBSmKTNQWaSs4fFfdm9Eggje6Wywkjn6ik4Y/haQZqcD002TnvOVXw0kbMKbXCXQfAYOoS7bb4V6M9C0kg6JPEguheYGSStzBbC8S+RxZ+MjTLthrbbLDMucrIrrgObK4kHwK0PGz0lFkdHbTzM2LliWAX3zh44glETmCK4yBDiFPNlHQN+QY8RE8Y6FY5M+Kmf6djR1CrxV1qSr+/7YDH2hCzCXaw6MDlQkTKO47E3oegRHElsUDMigBH9kpFj+fpqEqADW1+bzzILEGjig1DtQdlk/ett44jxgDsQAg4iVTolRCZ9jw6dlIocjpYAdDqDuJDLkOT7Banw7qddORoyy5i8UwhpLBTJQfWh+6lIQYlM+1gvM8MyTq4oiu2MWZBLXuSlrWTnyAbLeQ0/MRMW1U4Mn1rUy2WuWFYuSCrNGQ6HcpvpGnDhmWuno8/I/D4BnncFuGOjyVStYVTO9HTBFuELILXRWmO5+M8o57FG3sB/raszzDRDK1FnEUZlEs1DvvxqKdH4VQfUZihoiKuRxpOnFidlpMmRpO1+HwYKfBQYJSFyP42322DV+Z3myPvKMqsD0D+1PriAY4RSXyM96AK6dajphavQd3L4+JiiYdRF5DuZcIlRXqL0vwVgBjHklliVRUD1BNIGMxmtYklj5LW1RRNDespg5Z2H3sBgGtUi0Vomu1Br3JYW5Ipho7JXOAFyzrv8sMTPFROcv4VbLqlf+OYrVxg1/Wqu25/cJzbjStirqvV2LvJ/UsU9z1hlk8TePwHafes6ybPLwXBucc252U0PNwFthQb2XHDzXNg+4A+DV/TdoQIo9wuomsFYRNFItjv2vLlq4CUiqK5hKka/eg1kp7FUowKsUi917l4101GOixU4x2jF7bGVatexLwcSEUpxbVjksPTdOibLX7Ft6cL+Oql6QIy3oQdJ6HswGdstPBZPhs5XR8bmEaN1EoIg+mhucWi8Ye9y87/5h/X3uXhUXV4B8wm6vQA8eIYwhgZsngE/COYv0BulK48O9ns0o3UQsjufLqZ6p8ulEEYbtMUO5FXNYiN0WzEucJej+YlGLT7u7XHggEx2nFs1MsNDnHEYYY4TTWCNSLIy4OGpCqGgxmOgVC80MddwGC234lLMoCYqFZj/s7Bg+6H0E7tJEKO4cLb70OnOTlm6vIf5CrCrV5N+rc2cWmww/i9epKzSKOwxu7uyV68+7XnZohZqyJTnF7XQdjTUVfc9QLo2s/HOempMoxT0qDz2d/fHZe3Dx5/gxjEBxj0p1j2W321329//pHvHjyTAWRQZYeRRyTdFVo8kfRVBn8q9R9B/EvFBEpTr/GEVcav1PUbTRIC4VLx1XileKucCVohGxa1F7Age6XkfxSvHCcKV4pZgLhFBMU1ncGSEUU/fdEgEUU9ZtdoE/RVirsgv8Kaaua+wAbwUuXYV4V/iOYuq6vw7wpJi+7q89PClGrTkSCD+KeeLoRzFXDH0oxq39Ew5/itHKxvDAm2JezIsTuFKMW2UMB24UI1eK44ETxfB8iyngQDE832IKOFCMWzWMB24UI9f+CYc7xahlYzjgTDEv5sUJXCnGrTLGAjeK4fkUU8CBYl4Y2lDMjQNDhyyrP+cjuIN5FKMUipGGieIfGMEd9BRzvwaP0FH8IyO4A6b4hwhiijnWZBBYbotlbnVRLfqn9eK6xrccucW01969qVuXSzm06K1Rq+nchv/RuTmoF4AZNAgAAAAASUVORK5CYII=',
             }}
-            style={{ height: 20, width: 20 }}
+            style={{height: 20, width: 20}}
           />
           <TextInput placeholder="Search..." style={styles.searchInput} />
           <TouchableOpacity>
@@ -330,7 +327,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     elevation: 5, // for shadow on Android
     shadowColor: '#000', // for shadow on iOS
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },

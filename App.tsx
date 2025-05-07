@@ -35,6 +35,8 @@ import { RootStackParamList } from './screens/navigationTypes';
 import CallCenterScreen from './screens/callCenter';
 // Admin Screens 
 import MenuScreenNew from './screens/canteenAdmin/menu/MenuScreenNew';
+import MenuItemsByMenuIdScreen from './screens/menuItemsByMenuId';
+import CartPage from './screens/cartPageScreen';
 
 
 
@@ -63,6 +65,11 @@ const App = () => {
         <Stack.Screen name="MenuItemDetails" component={MenuItemDetails} />
         <Stack.Screen name="CallCenter" component={CallCenterScreen} />
         <Stack.Screen name="Walkin" component={walkin} />
+        <Stack.Screen
+          name="MenubyMenuId"
+          component={MenuItemsByMenuIdScreenNew}
+          initialParams={{menuId: undefined}} // Pass menuId as initial param
+        />
 
         {/* Canteen Admin */}
         

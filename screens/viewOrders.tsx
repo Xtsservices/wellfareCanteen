@@ -19,7 +19,7 @@ const ViewOrders: React.FC = () => {
     const fetchOrders = async () => {
       try {
         const token = await AsyncStorage.getItem('authorization');
-        const response = await axios.get('http://10.0.2.2:3002/api/order/listOrders', {
+        const response = await axios.get('http://172.16.4.52:3002/api/order/listOrders', {
           headers: {
             'Content-Type': 'application/json',
             authorization: token || '',

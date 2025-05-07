@@ -89,7 +89,7 @@ const MenuItemsByMenuIdScreen = () => {
         }
 
         const response = await axios.get(
-          `http://10.0.2.2:3002/api/menu/getMenuById?id=${menuId}`,
+          `http://172.16.4.52:3002/api/menu/getMenuById?id=${menuId}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ const MenuItemsByMenuIdScreen = () => {
       };
 
       const response = await axios.post(
-        'http://10.0.2.2:3002/api/cart/add',
+        'http://172.16.4.52:3002/api/cart/add',
         payload,
         {
           headers: {
@@ -179,7 +179,7 @@ const MenuItemsByMenuIdScreen = () => {
       console.log(response, 'response');
 
       const cartDataResponse = await axios.get(
-        'http://10.0.2.2:3002/api/cart/getCart',
+        'http://172.16.4.52:3002/api/cart/getCart',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ const MenuItemsByMenuIdScreen = () => {
 
       // Fetch the cart to get the correct cartItemId for this item
       const cartResponse = await axios.get(
-        'http://10.0.2.2:3002/api/cart/getCart',
+        'http://172.16.4.52:3002/api/cart/getCart',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -293,7 +293,7 @@ const MenuItemsByMenuIdScreen = () => {
       console.log(payload, 'payload');
 
       const response = await axios.post(
-        'http://10.0.2.2:3002/api/cart/updateCartItem',
+        'http://172.16.4.52:3002/api/cart/updateCartItem',
         payload,
         {
           headers: {
@@ -335,7 +335,7 @@ const MenuItemsByMenuIdScreen = () => {
         };
 
         const response = await axios.post(
-          'http://10.0.2.2:3002/api/cart/removeCartItem',
+          'http://172.16.4.52:3002/api/cart/removeCartItem',
           payload,
           {
             headers: {
@@ -375,7 +375,7 @@ const MenuItemsByMenuIdScreen = () => {
         };
 
         const response = await axios.post(
-          'http://10.0.2.2:3002/api/cart/updateCartItem',
+          'http://172.16.4.52:3002/api/cart/updateCartItem',
           payload,
           {
             headers: {

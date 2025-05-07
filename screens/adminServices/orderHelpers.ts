@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'http://10.0.2.2:3002/api';
+const API_BASE_URL = 'http://172.16.4.52:3002/api';
 
 const getToken = () => {
     return AsyncStorage.getItem('authorization')

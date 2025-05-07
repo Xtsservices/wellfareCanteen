@@ -28,7 +28,7 @@ const PaymentMethod = () => {
         return;
       }
       const response = await fetch(
-        'http://10.0.2.2:3002/api/order/placeOrder',
+        'http://172.16.4.52:3002/api/order/placeOrder',
         {
           method: 'POST',
           headers: {
