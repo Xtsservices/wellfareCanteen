@@ -98,7 +98,7 @@ const MenuScreenNew: React.FC<BreakfastProps> = ({ navigation }) => {
           return;
         }
         const response = await fetch(
-          `http://10.0.2.2:3002/api/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=`,
+          `http://172.16.4.52:3002/api/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=`,
           {
             method: 'GET',
             headers: {
@@ -140,7 +140,7 @@ const MenuScreenNew: React.FC<BreakfastProps> = ({ navigation }) => {
       }
       
       const response = await fetch(
-        `http://10.0.2.2:3002/api/menu/getMenuById?id=${menuId}`,
+        `http://172.16.4.52:3002/api/menu/getMenuById?id=${menuId}`,
         {
           method: 'GET',
           headers: {
@@ -183,7 +183,7 @@ const MenuScreenNew: React.FC<BreakfastProps> = ({ navigation }) => {
       };
 
       const response = await fetch(
-        'http://10.0.2.2:3002/api/cart/add',
+        'http://172.16.4.52:3002/api/cart/add',
         {
           method: 'POST',
           headers: {
