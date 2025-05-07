@@ -34,6 +34,7 @@ export type RootStackParamList = {
     menuPrice: number;
     menuCurrency: string;
   };
+  Walkin: undefined; 
   SettingsScreen: undefined;
   LoginScreen: undefined;
   ProfileScreen: undefined;
@@ -43,8 +44,17 @@ export type RootStackParamList = {
   OrderHistory: undefined;
   BluetoothControl: undefined;
   AdminDashboard: undefined;
+  MenuScreenNew: undefined;
   Breakfast: undefined;
-  // Cart: undefined; 
+  MenuDetailsScreen: { menuId: number | string };
+  MenuCard: undefined;
+  CartScreen: undefined;
+  "[menuId]": undefined; 
+  breakfast: undefined;
+  OrderDetails: { orderId: string }; 
+  MenuItemDetails: { 
+    menuId: number; 
+  };
   Users: { newUser?: { name: string; mobile: string; position?: string; address?: string } };
 
   WorkerProfile: { 
@@ -68,7 +78,10 @@ export type RootStackParamList = {
   MenubyMenuId: {menuId: string};
   orderhistory: undefined;
   MenuItemsByMenuId: { menuId: string };
-  breakfast: undefined;
   Orders : undefined;
   CallCenter: undefined;
+  Payment: {
+    cartId?: string;
+    totalAmount?: number;
+  };
 };
