@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import {
   View,
@@ -5,21 +6,74 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
   Image,
-  Linking,
 } from 'react-native';
 import DownNavbar from './downNavbar';
 
-const contactNumbers = [
-  {label: 'Admin Contact Number', number: '+91 98409 28222'},
-  {label: 'Super Admin Contact Number', number: '+91 987 654 3210'},
-  {label: 'Customer Care', number: '1800-123-456'},
-];
-
 const CallCenterScreen: React.FC = () => {
-  const handleDial = (number: string) => {
-    const phoneNumber = `tel:${number.replace(/\s+/g, '')}`;
-    Linking.openURL(phoneNumber);
+  const phonenumber = AsyncStorage.getItem('phonenumber');
+  console.log(phonenumber, 'phonenumber');
+
+  const handleApiCall = async (option: number) => {
+    const apiUrl =
+      'https://iqtelephony.airtel.in/gateway/airtel-xchange/v2/execute/workflow';
+    const payload = {
+      callFlowId:
+        'TUMspyjWoYb+Ul8vp2khpgWZix3lECvaXcJtTQ78KKK6ZrDHJu7L4PH+3GpdB3h+NZote2LjQdUQy1S9rnLnpLO4EZ0yMMDdK9TZynTxHEU=',
+      customerId: 'KWIKTSP_CO_Td9yLftfU903GrIZNyxW',
+      callType: 'OUTBOUND',
+      callFlowConfiguration: {
+        initiateCall_1: {
+          callerId: '8048248411',
+          mergingStrategy: 'SEQUENTIAL',
+          participants: [
+            {
+              participantAddress: 'phoneNumber',
+              callerId: '8048248411',
+              participantName: 'abc',
+              maxRetries: 1,
+              maxTime: 360,
+            },
+          ],
+          maxTime: 360,
+        },
+        addParticipant_1: {
+          mergingStrategy: 'SEQUENTIAL',
+          maxTime: 360,
+          participants: [
+            {
+              participantAddress:
+                option === 1
+                  ? '9494999989'
+                  : option === 2
+                  ? '7093081518'
+                  : '9182161124',
+              participantName: 'pqr',
+              maxRetries: 1,
+              maxTime: 360,
+            },
+          ],
+        },
+      },
+    };
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic c21hcnRlcmJpejotaDcySj92MnZUWEsyV1J4',
+          'Cache-Control': 'no-cache',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      Alert.alert(`Option ${option} API Response`, JSON.stringify(data));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to call the API');
+    }
   };
 
   return (
@@ -52,15 +106,15 @@ const CallCenterScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+
       <View style={styles.content}>
-        {contactNumbers.map((item, idx) => (
+        {[1, 2, 3].map(option => (
           <TouchableOpacity
-            key={idx}
+            key={option}
             style={styles.card}
-            onPress={() => handleDial(item.number)}
+            onPress={() => handleApiCall(option)}
             activeOpacity={0.7}>
-            <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.number}>{item.number}</Text>
+            <Text style={styles.label}>Option {option}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -69,10 +123,13 @@ const CallCenterScreen: React.FC = () => {
   );
 };
 
-// ...styles remain unchanged
-
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff', marginTop: 50},
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   card: {
     width: '90%',
@@ -84,7 +141,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   label: {fontSize: 18, fontWeight: 'bold', marginBottom: 8},
-  number: {fontSize: 16, color: '#0014A8'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -159,11 +159,11 @@ const CartPage = () => {
   };
 
   const calculateGSTAndCharges = (subtotal: number) => {
-    return subtotal * 0.07; // 7% GST
+    return subtotal * 0.000; // 7% GST
   };
 
   const calculatePlatformFee = () => {
-    return 10; // Fixed platform fee
+    return 0; // Fixed platform fee
   };
 
   if (loading) {
@@ -331,7 +331,7 @@ const CartPage = () => {
                       <TouchableOpacity
                         onPress={() => handleRemoveItem(item)}
                         style={styles.removeButton}>
-                        <Text style={styles.removeButtonText}>Remove333</Text>
+                        <Text style={styles.removeButtonText}>Remove</Text>
                       </TouchableOpacity>
                     </>
                   )}

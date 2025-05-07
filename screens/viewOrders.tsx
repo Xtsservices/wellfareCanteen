@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,54 +6,71 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  ScrollView,
 } from 'react-native';
 import DownNavbar from './downNavbar';
-
-export interface Order {
-  id: string;
-  orderNumber: string;
-  dateTime: string;
-  session: string;
-}
-
-const orders: Order[] = [
-  {
-    id: '1',
-    orderNumber: '12345',
-    dateTime: '2023-10-01 12:30 PM',
-    session: 'Afternoon',
-  },
-  {
-    id: '2',
-    orderNumber: '12346',
-    dateTime: '2023-10-02 01:00 PM',
-    session: 'Afternoon',
-  },
-  {
-    id: '3',
-    orderNumber: '12347',
-    dateTime: '2023-10-03 02:15 PM',
-    session: 'Afternoon',
-  },
-];
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ViewOrders: React.FC = () => {
-  const renderOrder = ({item}: {item: Order}) => (
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authorization');
+        const response = await axios.get('http://10.0.2.2:3002/api/order/listOrders', {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token || '',
+          },
+        });
+        setOrders(response.data.data || []);
+      } catch (error: any) {
+        console.error('Failed to fetch orders', error);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString();
+  };
+
+  const renderOrder = ({ item }: { item: any }) => (
     <View style={styles.orderItem}>
       <View style={styles.orderDetails}>
-        <Text style={styles.orderNumber}>Order Number: {item.orderNumber}</Text>
-        <Text style={styles.session}>{item.session}</Text>
-        <Text style={styles.dateTime}>{item.dateTime}</Text>
+        <Text style={styles.orderNumber}>Order ID: {item.id}</Text>
+        <Text style={styles.session}>Status: {item.status}</Text>
+        <Text style={styles.dateTime}>Date: {formatDateTime(item.createdAt)}</Text>
+        <Text>Total: ₹{item.totalAmount}</Text>
+        <Text>Payment: {item.payment?.status} via {item.payment?.paymentMethod}</Text>
+
+        <Text style={{ marginTop: 8, fontWeight: 'bold' }}>Items:</Text>
+        {item.orderItems.map((orderItem: any, index: number) => (
+          <Text key={index}>
+            {orderItem.menuItemItem.name} × {orderItem.quantity} = ₹{orderItem.total}
+          </Text>
+        ))}
       </View>
+
+      {item.qrCode && (
+        <Image
+          source={{ uri: item.qrCode }}
+          style={{ width: 60, height: 60, marginTop: 10 }}
+        />
+      )}
+
       <TouchableOpacity style={styles.reorderButton}>
         <Text style={styles.reorderText}>Re-Order</Text>
       </TouchableOpacity>
-      {/* <Icon name="chevron-forward" size={24} color="#000" /> */}
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
           <Image
@@ -82,36 +99,72 @@ const ViewOrders: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+
       <View style={styles.header1}>
-        {/* <Icon name="arrow-back" size={24} color="#fff" /> */}
         <Text style={styles.headerTitle1}>Orders History</Text>
       </View>
+
+      {/* Orders List */}
       <FlatList
         data={orders}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
         renderItem={renderOrder}
         contentContainerStyle={styles.listContainer}
       />
+
+      {/* Bottom Navbar */}
       <DownNavbar style={styles.stckyNavbar} />
-      {/* Footer or any additional content can go here */}
-      {/* <Text style={styles.footer}>Powered by WorldTech.in</Text> */}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // ... [same as your current styles with optional fine-tuning] ...
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    padding: 16,
     marginTop: 50,
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 80,
+  },
+  orderItem: {
+    backgroundColor: '#fff',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  orderDetails: {
+    marginBottom: 8,
+  },
+  orderNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  session: {
+    fontSize: 14,
+    color: '#555',
+  },
+  dateTime: {
+    fontSize: 14,
+    color: '#555',
+  },
+  reorderButton: {
+    backgroundColor: '#e0e0e0',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginTop: 10,
+  },
+  reorderText: {
+    fontSize: 14,
+    color: '#000',
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#0014A8',
     paddingVertical: 20,
@@ -142,60 +195,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header1: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0014A8',
+    backgroundColor: 'white',
     paddingVertical: 20,
     padding: 30,
   },
   headerTitle1: {
-    color: '#fff',
+    color: '#0014A8',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  orderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 8,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  orderDetails: {
-    flex: 1,
-  },
-  orderNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  session: {
-    fontSize: 14,
-    color: '#555',
-  },
-  dateTime: {
-    fontSize: 14,
-    color: '#555',
-  },
-  reorderButton: {
-    backgroundColor: '#e0e0e0',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  reorderText: {
-    fontSize: 14,
-    color: '#000',
-  },
-  footer: {
-    textAlign: 'center',
-    padding: 16,
-    color: '#555',
   },
   stckyNavbar: {
     position: 'absolute',

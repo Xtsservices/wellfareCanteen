@@ -11,9 +11,6 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import DownNavbar from './downNavbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const {PermissionsAndroid, Platform} = require('react-native');
-const CameraRoll = require('@react-native-camera-roll/camera-roll').default;
-const RNFetchBlob = require('rn-fetch-blob').default;
 
 const PaymentMethod = () => {
   const navigation = useNavigation();
@@ -60,54 +57,7 @@ const PaymentMethod = () => {
     setShowOrderDetails(!showOrderDetails);
   };
 
-  async function SaveQrToGallery() {
-    try {
-      Alert.alert('Saving QR Code', 'Saving QR code to gallery...');
-      return;
-      // Request permission on Android
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          {
-            title: 'Storage Permission Required',
-            message: 'App needs access to your storage to save the QR code.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert(
-            'Permission Denied',
-            'Storage permission is required to save the QR code.',
-          );
-          return;
-        }
-      }
-
-      // Extract base64 data from the QR code URI
-      if (!orderResponse || !orderResponse.order.qrCode) {
-        Alert.alert('Error', 'No QR code available to save.');
-        return;
-      }
-      const base64Data = orderResponse.order.qrCode.split(',')[1];
-
-      // Get the directory path
-      const dirs = RNFetchBlob.fs.dirs;
-      const path = `${dirs.DownloadDir}/QRCode_${orderResponse.order.id}.png`;
-
-      // Write the file
-      await RNFetchBlob.fs.writeFile(path, base64Data, 'base64');
-
-      // Save to gallery
-      await CameraRoll.save(path, {type: 'photo'});
-
-      Alert.alert('Success', 'QR code saved to your gallery.');
-    } catch (error) {
-      console.error('Error saving QR code:', error);
-      Alert.alert('Error', 'Failed to save QR code.');
-    }
-  }
+  async function SaveQrToGallery() {}
 
   return (
     <View style={styles.container}>
@@ -247,11 +197,20 @@ const PaymentMethod = () => {
                   style={styles.qrCodeImage}
                 />
                 <TouchableOpacity
-                  style={[styles.payButton, {marginTop: 20}]}
-                  onPress={SaveQrToGallery}>
-                  <Text style={styles.payButtonText}>
-                    Save QR Code to Gallery
-                  </Text>
+                  onPress={SaveQrToGallery}
+                  style={{marginTop: 20}}>
+                  <Image
+                    source={{
+                      uri: 'https://cdn-icons-png.flaticon.com/512/724/724933.png',
+                    }}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      resizeMode: 'contain',
+                      tintColor: '#000080',
+                      transform: [{translateY: Math.sin(Date.now() / 500) * 5}],
+                    }}
+                  />
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -275,8 +234,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 40,
+    height: 40,
     resizeMode: 'contain',
   },
   title: {
