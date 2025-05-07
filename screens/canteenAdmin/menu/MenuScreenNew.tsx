@@ -12,18 +12,18 @@ import {
   Dimensions,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigationTypes';
+import { RootStackParamList } from './types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
-type BreakfastScreenNavigationProp = StackNavigationProp<
+type MenuScreenNewNavigationProp = StackNavigationProp<
   RootStackParamList,
-  'breakfast'
+  'MenuScreenNew'
 >;
 
 interface BreakfastProps {
-  navigation: BreakfastScreenNavigationProp;
+  navigation: MenuScreenNewNavigationProp;
 }
 
 interface Pricing {
@@ -80,7 +80,7 @@ interface CartResponse {
   };
 }
 
-const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
+const MenuScreenNew: React.FC<BreakfastProps> = ({ navigation }) => {
   const [menuData, setMenuData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dates, setDates] = useState<string[]>([]);
@@ -88,13 +88,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
   const [showMenuDetails, setShowMenuDetails] = useState(false);
   const [addingToCart, setAddingToCart] = useState<number | null>(null); // Track which item is being added
 
-  console.log(menuData, "menuData--neww");
-
-
   useEffect(() => {
-
-    let isMounted = true;
-
     // Fetch menu data 
     const fetchMenuData = async () => {
       try {
@@ -114,9 +108,9 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
         );
 
         const data = await response.json();
-        // console.log('Menu Data:', data);
-
-        if (isMounted) {
+        console.log('Menu Data:', data);
+        
+        if (data?.data) {
           setMenuData(data.data);
           const apiDates = Object.keys(data.data).sort((a, b) => {
             const dateA = new Date(a.split('-').reverse().join('-'));
@@ -133,9 +127,6 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
     };
 
     fetchMenuData();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Fetch menu details by ID
@@ -147,7 +138,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
         console.error('No token found in AsyncStorage');
         return;
       }
-
+      
       const response = await fetch(
         `http://10.0.2.2:3002/api/menu/getMenuById?id=${menuId}`,
         {
@@ -173,10 +164,8 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
 
   // Add item to cart
   const addToCart = async (itemId: number, quantity: number) => {
-    if (!selectedMenu || !selectedMenu.menuItems) return null;
-
-
-
+    if (!selectedMenu) return;
+    
     try {
       setAddingToCart(itemId);
       const token = await AsyncStorage.getItem('authorization');
@@ -206,7 +195,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
       );
 
       const data: CartResponse = await response.json();
-
+      
       if (data.data) {
         Alert.alert(
           'Success',
@@ -259,9 +248,9 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
       return (
         <Image
           source={{
-            uri: imageUrl
-              ? `data:image/png;base64,${imageUrl}`
-              : 'https://via.placeholder.com/150',
+        uri: imageUrl
+          ? `data:image/png;base64,${imageUrl}`
+          : 'https://via.placeholder.com/150',
           }}
           style={styles.itemImage}
           resizeMode="cover"
@@ -278,13 +267,11 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
 
   const renderMenuDetails = () => {
     if (!selectedMenu) return null;
-    console.log(selectedMenu, "selectedMenu--renderMenuDetails");
-
 
     return (
       <View style={{ flex: 1 }}>
-        <TouchableOpacity
-          style={styles.backButton}
+        <TouchableOpacity 
+          style={styles.backButton} 
           onPress={() => setShowMenuDetails(false)}
         >
           <Text style={styles.backButtonText}>← Back to Menu</Text>
@@ -296,38 +283,37 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
 
           <View style={styles.timingContainer}>
             <Text style={styles.timingText}>
-              Menu Time: {formatTime(selectedMenu?.startTime)} - {formatTime(selectedMenu?.endTime)}
+              Menu Time: {formatTime(selectedMenu.startTime)} - {formatTime(selectedMenu.endTime)}
             </Text>
             <Text style={styles.timingText}>
-              Default Time: {formatTime(selectedMenu?.menuMenuConfiguration?.defaultStartTime)} - {formatTime(selectedMenu?.menuMenuConfiguration?.defaultEndTime)}
+              Default Time: {formatTime(selectedMenu.menuMenuConfiguration.defaultStartTime)} - {formatTime(selectedMenu.menuMenuConfiguration.defaultEndTime)}
             </Text>
           </View>
         </View>
 
         <FlatList
           data={selectedMenu.menuItems}
-          keyExtractor={(item) => `${item.id}-${item.menuItemItem.id}`}
+          keyExtractor={(item) => item.id.toString()}
           numColumns={3}  // Add this for 3-column layout
-          columnWrapperStyle={styles.columnWrapper}  // Add this for spacing
+        columnWrapperStyle={styles.columnWrapper}  // Add this for spacing
           renderItem={({ item }) => (
             <View style={styles.menuItem}>
-              {renderItemImage(item?.menuItemItem?.image)}
+              {renderItemImage(item.menuItemItem.image)}
               <Text style={styles.itemName}>{item.menuItemItem.name}</Text>
               <Text style={styles.itemDescription}>{item.menuItemItem.description}</Text>
               <Text style={styles.itemPrice}>
-                {item?.menuItemItem?.pricing?.currency} {item?.menuItemItem?.pricing?.price}
+                {item.menuItemItem.pricing.currency} {item.menuItemItem.pricing.price}
               </Text>
               <Text style={styles.quantityRange}>
                 Quantity: {item.minQuantity}-{item.maxQuantity}
               </Text>
-
+              
               <TouchableOpacity
                 style={styles.addToCartButton}
-                onPress={() => addToCart(item?.menuItemItem?.id, item?.minQuantity)}
-                disabled={addingToCart === item?.menuItemItem?.id}
+                onPress={() => addToCart(item.menuItemItem.id, item.minQuantity)}
+                disabled={addingToCart === item.id}
               >
-                {addingToCart === item?.menuItemItem?.id ? (
-
+                {addingToCart === item.id ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <Text style={styles.addToCartButtonText}>Add to Cart</Text>
@@ -342,8 +328,6 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
   };
 
   const renderMenuButtons = (date: string, menu: any) => {
-    console.log(menu, " menu--renderMenuButtons");
-
     return (
       <View key={date} style={{ paddingHorizontal: 10, marginVertical: 10 }}>
         <Text style={styles.dateHeader}>
@@ -354,12 +338,11 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
             const menuItem = menu[category][0];
             return (
               <TouchableOpacity
+                key={index}
                 style={styles.categoryButton}
                 onPress={() => {
                   if (menuItem) {
-                    navigation.navigate('MenuItemDetails', {
-                      menuId: menuItem.id,
-                    });
+                    fetchMenuDetails(menuItem.id);
                   }
                 }}
               >
@@ -377,9 +360,9 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
   const renderMenuList = () => {
     return (
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AdminDashboard')}>
+        {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AdminDashboard')}>
           <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <View style={styles.header}>
           <Text style={styles.title}>🍽️ Explore the Menu</Text>
@@ -577,4 +560,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Breakfast;
+export default MenuScreenNew;

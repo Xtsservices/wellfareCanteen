@@ -46,8 +46,8 @@ export const fetchCartData = async () => {
 // Add item to cart
 export const addItemToCart = async (
   itemId: string | number,
-  menuId: string | number,
-  menuConfigId: string | number,
+  menuId: string | number | undefined,
+  menuConfigId: string | number | undefined,
   quantity: number,
 ) => {
   try {
@@ -66,7 +66,7 @@ export const addItemToCart = async (
       itemId: Number(itemId),
       quantity,
       menuId: Number(menuId),
-      canteenId: Number(canteenId),
+      canteenId: Number(canteenId) || 1,
       menuConfigurationId: Number(menuConfigId),
     };
 
@@ -89,8 +89,8 @@ export const addItemToCart = async (
 
 // Update cart item quantity
 export const updateCartItemQuantity = async (
-  cartId: number | string,
-  cartItemId: number | string | undefined,
+  cartId: number | string | undefined | null,
+  cartItemId: number | string | undefined | null,
   quantity: number,
 ) => {
   console.log(cartId,"cartId", cartItemId, "----cartitemid", quantity,"----quantity");
@@ -126,7 +126,7 @@ export const updateCartItemQuantity = async (
 };
 
 // Remove item from cart
-export const removeCartItem = async (cartId: number, cartItemId: number) => {
+export const removeCartItem = async (cartId: number, cartItemId: number | null | undefined) => {
   console.log(cartId,"cartId", cartItemId, "----cartitemid------cartHelpers");
   
   try {
@@ -188,4 +188,36 @@ export const findCartItemByItemId = (
       String(cartItem.itemId) === String(itemId) ||
       (cartItem.item && String(cartItem.item.id) === String(itemId)),
   );
+};
+
+// --------------------------------------------------------------------------------
+
+export const fetchDashboardData = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authorization');
+    const response = await fetch('http://10.0.2.2:3002/api/adminDasboard/dashboard', {
+      headers: {
+        'Authorization': token || '',
+      },
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+export const fetchRecentOrders = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authorization');
+    const response = await fetch('http://10.0.2.2:3002/api/adminDasboard/getTotalOrders', {
+      headers: {
+        'Authorization': token || '',
+      },
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
 };
