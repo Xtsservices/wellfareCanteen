@@ -29,10 +29,12 @@ export interface MenuItem {
     menuConfiguration: {
       id: string;
       name: string;
-      defaultStartTime: number;
-      defaultEndTime: number;
+      defaultStartTime?: number;
+      defaultEndTime?: number;
       status: string;
     };
+    Payment: { cartId: number }; // Add the Payment route with its parameters
+
   }
   
   export interface CartItem {
