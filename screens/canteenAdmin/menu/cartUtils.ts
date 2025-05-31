@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CartData, CartItem } from './types';
+import {CartData, CartItem} from './types';
 
 // Fetch cart data from the API
 export const fetchCartData = async (): Promise<CartData | null> => {
@@ -9,12 +9,15 @@ export const fetchCartData = async (): Promise<CartData | null> => {
       throw new Error('No token found');
     }
 
-    const response = await fetch('http://172.16.4.52:3002/api/cart/getCart', {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token,
+    const response = await fetch(
+      'https://server.welfarecanteen.in/api/cart/getCart',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
       },
-    });
+    );
 
     const data = await response.json();
     if (data && data.data) {
@@ -33,25 +36,27 @@ export const addItemToCart = async (
   menuId: number | undefined,
   menuConfigurationId: number | undefined,
   quantity: number,
-  canteenId: number | undefined
+  canteenId: number | undefined,
 ): Promise<any> => {
   try {
     const token = await AsyncStorage.getItem('authorization');
     if (!token) {
       throw new Error('No token found');
     }
+    const date = await AsyncStorage.getItem('date');
 
-    const response = await fetch('http://172.16.4.52:3002/api/cart/add', {
+    const response = await fetch('https://server.welfarecanteen.in/api/cart/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': token,
+        Authorization: token,
       },
       body: JSON.stringify({
         itemId,
         quantity,
         menuId,
         menuConfigurationId,
+        date,
       }),
     });
 
@@ -66,7 +71,7 @@ export const addItemToCart = async (
 export const updateCartItemQuantity = async (
   cartId: number,
   cartItemId: number,
-  quantity: number
+  quantity: number,
 ): Promise<any> => {
   try {
     const token = await AsyncStorage.getItem('authorization');
@@ -74,18 +79,21 @@ export const updateCartItemQuantity = async (
       throw new Error('No token found');
     }
 
-    const response = await fetch('http://172.16.4.52:3002/api/cart/updateQuantity', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token,
+    const response = await fetch(
+      'https://server.welfarecanteen.in/api/cart/updateQuantity',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          cartId,
+          cartItemId,
+          quantity,
+        }),
       },
-      body: JSON.stringify({
-        cartId,
-        cartItemId,
-        quantity,
-      }),
-    });
+    );
 
     return await response.json();
   } catch (error) {
@@ -97,7 +105,7 @@ export const updateCartItemQuantity = async (
 // Remove an item from the cart
 export const removeCartItem = async (
   cartId: number,
-  cartItemId: number
+  cartItemId: number,
 ): Promise<any> => {
   try {
     const token = await AsyncStorage.getItem('authorization');
@@ -105,17 +113,20 @@ export const removeCartItem = async (
       throw new Error('No token found');
     }
 
-    const response = await fetch('http://172.16.4.52:3002/api/cart/removeItem', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token,
+    const response = await fetch(
+      'https://server.welfarecanteen.in/api/cart/removeItem',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          cartId,
+          cartItemId,
+        }),
       },
-      body: JSON.stringify({
-        cartId,
-        cartItemId,
-      }),
-    });
+    );
 
     return await response.json();
   } catch (error) {
@@ -127,7 +138,7 @@ export const removeCartItem = async (
 // Find a cart item by item ID
 export const findCartItemByItemId = (
   cartData: CartData | null,
-  itemId: number
+  itemId: number,
 ): CartItem | undefined => {
   if (!cartData || !cartData.cartItems) return undefined;
   return cartData.cartItems.find((item: any) => item.itemId === itemId);
@@ -136,7 +147,7 @@ export const findCartItemByItemId = (
 // Format time from timestamp
 export const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 };
 
 // Format date for display
@@ -147,6 +158,6 @@ export const formatDateDisplay = (dateString: string): string => {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 };

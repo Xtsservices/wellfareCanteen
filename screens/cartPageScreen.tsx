@@ -29,9 +29,6 @@ const CartPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingItems, setUpdatingItems] = useState<number[]>([]);
-  console.log(cartData, 'cartData---------');
-  console.log(updatingItems, 'updatingItems---------');
-  console.log(AsyncStorage.getItem('authorization'), 'authorization---------');
 
   const loadCartData = async () => {
     try {
@@ -40,8 +37,8 @@ const CartPage = () => {
       console.log('Fetched cart data:', data);
       setCartData(data);
     } catch (err) {
-      setError('Failed to fetch cart data');
-      console.error('Error fetching cart data:', err);
+      // setError('Failed to fetch cart data');
+      // console.error('Error fetching cart data:', err);
     } finally {
       setLoading(false);
     }
@@ -68,7 +65,7 @@ const CartPage = () => {
 
       console.log('Request body:', body);
       const token = await AsyncStorage.getItem('authorization');
-      const API_BASE_URL = 'http://172.16.4.52:3002/api';
+      const API_BASE_URL = 'https://server.welfarecanteen.in/api';
       await axios.post(`${API_BASE_URL}/cart/updateCartItem`, body, {
         headers: {
           'Content-Type': 'application/json',
@@ -76,13 +73,6 @@ const CartPage = () => {
         },
       });
 
-      // await updateCartItemQuantity(
-      //   cartData?.id as number,
-      //   cartItem.id,
-      //   newQuantity
-      // );
-
-      // Refresh cart data
       await loadCartData();
     } catch (err) {
       setError('Failed to update cart item');
@@ -100,9 +90,6 @@ const CartPage = () => {
       if (!cartData) return;
 
       setUpdatingItems(prev => [...prev, item?.item?.id]);
-      // {
-      //     "cartId":3,"cartItemId":1
-      // }
       const body = {
         cartId: cartData?.id,
         cartItemId: item?.item?.id,
@@ -126,7 +113,6 @@ const CartPage = () => {
       setLoading(true);
       await clearCartHelper();
       setCartData({} as CartData);
-
     } catch (err) {
       setError('Failed to clear cart');
       console.error('Error clearing cart:', err);
@@ -159,7 +145,7 @@ const CartPage = () => {
   };
 
   const calculateGSTAndCharges = (subtotal: number) => {
-    return subtotal * 0.000; // 7% GST
+    return subtotal * 0.0; // 7% GST
   };
 
   const calculatePlatformFee = () => {
@@ -216,311 +202,325 @@ const CartPage = () => {
 
   return (
     <View style={styles.container}>
-      {/* Cart Header */}
-      <View style={styles.header1}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={{
-              uri: 'https://cdn-icons-png.flaticon.com/512/93/93634.png',
-            }}
-            style={styles.backIcon}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle1}>
-          <Image
-            source={{
-              uri: 'https://www.joinindiannavy.gov.in/images/octaginal-crest.png',
-            }}
-            style={styles.logo}
-          />
-        </Text>
-        <View style={styles.headerIcons1}>
-          <TouchableOpacity style={styles.iconborder1}>
+      {/* Custom Header */}
+      <View style={styles.headerContainer}>
+        <Image
+          source={{
+            uri: 'https://welfarecanteen.in/public/Naval.jpg',
+          }}
+          style={styles.logo}
+        />
+        <Text style={styles.headerTitle}>My Cart</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconButton}>
             <Image
               source={{
                 uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
               }}
-              style={styles.icon1}
+              style={styles.headerIcon}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconborder1}>
+          <TouchableOpacity style={styles.iconButton}>
             <Image
               source={{
                 uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
               }}
-              style={styles.icon1}
+              style={styles.headerIcon}
             />
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.header}>
-        {/* <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={{
-              uri: uricart1,
-            }}
-            style={styles.backIcon}
-          />
-        </TouchableOpacity> */}
-        <Text style={styles.headerTitle}>Cart</Text>
-        <TouchableOpacity onPress={confirmClearCart}>
-          <Text style={styles.clearCartText}>Clear Cart</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Cart Items */}
       <ScrollView style={styles.cartItems}>
-        {cartData?.cartItems?.map(item => {
-          console.log('Cart item:-------', item);
-
-          return (
-            <View key={item.id} style={styles.cartItem}>
-              <Image
-                source={{
-                  uri: item.item.image
-                    ? `data:image/png;base64,${item.item.image}`
-                    : 'https://via.placeholder.com/80',
-                }}
-                style={styles.itemImage}
-              />
-              <View style={styles.itemDetails}>
-                <Text style={styles.itemName}>{item.item.name}</Text>
-                <View style={styles.typeContainer}>
-                  <Image
-                    source={{
-                      uri:
-                        item.item.type && item.item.type.toLowerCase() === 'veg'
-                          ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
-                          : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
-                    }}
-                    style={styles.typeIcon}
-                  />
-                  <Text style={styles.typeText}>
-                    {item.item.type ? item.item.type.toUpperCase() : 'N/A'}
-                  </Text>
-                </View>
-                <Text style={styles.itemPrice}>
-                  Price: ₹{item.price.toFixed(2)}
+        {cartData?.cartItems?.map(item => (
+          <View key={item.id} style={styles.cartItemCard}>
+            <Image
+              source={{
+                uri: item.item.image
+                  ? `data:image/png;base64,${item.item.image}`
+                  : 'https://via.placeholder.com/80',
+              }}
+              style={styles.itemImage}
+            />
+            <View style={styles.itemInfo}>
+              {/* Name & Remove Button Row */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={styles.itemName} numberOfLines={2}>
+                  {item.item.name}
                 </Text>
+                <TouchableOpacity
+                  onPress={() => handleRemoveItem(item)}
+                  style={styles.removeIconButton}
+                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                  <Text style={styles.removeIconText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              {/* Type Row */}
+              <View style={styles.typeRow}>
+                <Image
+                  source={{
+                    uri:
+                      item.item.type && item.item.type.toLowerCase() === 'veg'
+                        ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
+                        : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
+                  }}
+                  style={styles.typeIcon}
+                />
+                <Text style={styles.typeText}>
+                  {item.item.type ? item.item.type.toUpperCase() : 'N/A'}
+                </Text>
+              </View>
+              {/* Price & Total Row */}
+              <View style={styles.priceRow}>
+                <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
                 <Text style={styles.itemTotal}>
                   Total: ₹{item.total.toFixed(2)}
                 </Text>
-                <View style={styles.quantityControl}>
-                  {updatingItems.includes(item.id) ? (
-                    <ActivityIndicator size="small" color="#0014A8" />
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={() =>
-                          updateItemQuantity(
-                            item,
-                            Math.max(1, item.quantity - 1),
-                          )
-                        }>
-                        <Text style={styles.quantityText}>-</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.quantity}>{item.quantity}</Text>
-                      <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={() =>
-                          updateItemQuantity(item, item.quantity + 1)
-                        }>
-                        <Text style={styles.quantityText}>+</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleRemoveItem(item)}
-                        style={styles.removeButton}>
-                        <Text style={styles.removeButtonText}>Remove</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
+              </View>
+              {/* Quantity Row */}
+              <View style={styles.quantityRow}>
+                {updatingItems.includes(item.id) ? (
+                  <ActivityIndicator size="small" color="#0014A8" />
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      style={[
+                        styles.qtyBtn,
+                        {opacity: item.quantity === 1 ? 0.5 : 1},
+                      ]}
+                      onPress={() =>
+                        item.quantity > 1 &&
+                        updateItemQuantity(item, item.quantity - 1)
+                      }
+                      disabled={item.quantity === 1}>
+                      <Text style={styles.qtyBtnText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.quantity}>{item.quantity}</Text>
+                    <TouchableOpacity
+                      style={styles.qtyBtn}
+                      onPress={() =>
+                        updateItemQuantity(item, item.quantity + 1)
+                      }>
+                      <Text style={styles.qtyBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
-          );
-        })}
+          </View>
+        ))}
       </ScrollView>
 
       {/* Bill Summary */}
-      <View style={styles.billSummary}>
-        <Text style={styles.billTitle}>Bill Summary</Text>
+      <View style={styles.billCard}>
         <View style={styles.billRow}>
-          <Text>Subtotal:</Text>
-          <Text>₹{subtotal.toFixed(2)}</Text>
+          <Text style={styles.billLabel}>Subtotal</Text>
+          <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+        </View>
+        {/* <View style={styles.billRow}>
+          <Text style={styles.billLabel}>GST & Charges</Text>
+          <Text style={styles.billValue}>₹{gstAndCharges.toFixed(2)}</Text>
         </View>
         <View style={styles.billRow}>
-          <Text>GST & Charges:</Text>
-          <Text>₹{gstAndCharges.toFixed(2)}</Text>
+          <Text style={styles.billLabel}>Platform Fee</Text>
+          <Text style={styles.billValue}>₹{platformFee.toFixed(2)}</Text>
+        </View> */}
+        <View style={[styles.billRow, styles.billTotalRow]}>
+          <Text style={styles.billTotalLabel}>Total</Text>
+          <Text style={styles.billTotalValue}>₹{totalAmount.toFixed(2)}</Text>
         </View>
-        <View style={styles.billRow}>
-          <Text>Platform Fee:</Text>
-          <Text>₹{platformFee.toFixed(2)}</Text>
-        </View>
-        <View style={[styles.billRow, styles.totalRow]}>
-          <Text style={styles.totalAmount}>Total:</Text>
-          <Text style={styles.totalAmount}>₹{totalAmount.toFixed(2)}</Text>
-        </View>
+        <TouchableOpacity style={styles.payBtn} onPress={handlePayment}>
+          <Text style={styles.payBtnText}>Proceed to Payment</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.clearCartBtn}
+          onPress={confirmClearCart}>
+          <Text style={styles.clearCartBtnText}>Clear Cart</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Payment Button */}
-      <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
-        <Text style={styles.payButtonText}>Proceed to Payment</Text>
-      </TouchableOpacity>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <DownNavbar />
-      </View>
+      <DownNavbar />
     </View>
   );
 };
 
+// --- Improved Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    marginTop: 50,
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
+    backgroundColor: '#F4F6FB',
   },
   loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F4F6FB',
   },
   errorContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#fff0f0',
+    paddingHorizontal: 24,
   },
   errorText: {
-    color: 'red',
+    color: '#ff4d4d',
     fontSize: 16,
-    marginBottom: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
     textAlign: 'center',
   },
   refreshButton: {
     backgroundColor: '#0014A8',
+    borderRadius: 8,
     paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  header1: {
-    flexDirection: 'row',
+    paddingHorizontal: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0014A8',
-    paddingVertical: 20,
-    padding: 30,
-  },
-  headerTitle1: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  headerIcons1: {
-    flexDirection: 'row',
-  },
-  icon1: {
-    width: 30,
-    height: 30,
-  },
-  iconborder1: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    padding: 7,
-    marginLeft: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: 4,
   },
   refreshButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: 'bold',
   },
   emptyCartContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#F4F6FB',
+    paddingHorizontal: 24,
   },
   emptyCartIcon: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
+    width: 80,
+    height: 80,
+    marginBottom: 16,
+    tintColor: '#b0b0b0',
   },
   emptyCartText: {
     fontSize: 18,
-    marginBottom: 20,
-    color: '#666',
+    color: '#888',
+    fontWeight: 'bold',
+    marginBottom: 18,
+    textAlign: 'center',
   },
   continueShoppingButton: {
     backgroundColor: '#0014A8',
-    paddingVertical: 12,
+    borderRadius: 8,
+    paddingVertical: 10,
     paddingHorizontal: 24,
-    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 24,
   },
   continueShoppingText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: 'bold',
   },
-  header: {
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#0014A8',
+    paddingTop: 40,
+    paddingBottom: 16,
+    paddingHorizontal: 18,
     justifyContent: 'space-between',
-    backgroundColor: 'white',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    elevation: 4,
   },
-  clearCartText: {
-    color: '#0014A8',
-    fontSize: 14,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#0014A8',
+  logo: {
+    width: 38,
+    height: 38,
+    resizeMode: 'contain',
+    borderRadius: 8,
+    backgroundColor: '#fff',
   },
   headerTitle: {
-    color: '#0014A8',
-    fontSize: 20,
+    color: '#fff',
+    fontSize: 22,
     fontWeight: 'bold',
+    letterSpacing: 1,
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 5,
+    elevation: 2,
+  },
+  headerIcon: {
+    width: 26,
+    height: 26,
+    resizeMode: 'contain',
   },
   cartItems: {
     flex: 1,
-    padding: 10,
+    paddingHorizontal: 10,
+    marginTop: 10,
   },
-  cartItem: {
+  cartItemCard: {
     flexDirection: 'row',
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 14,
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
     elevation: 2,
+    shadowColor: '#0014A8',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
   },
   itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#eee',
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    backgroundColor: '#e6eaf2',
   },
-  itemDetails: {
+  itemInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
+    justifyContent: 'space-between',
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   itemName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontWeight: '600',
+    color: '#222',
+    flex: 1,
+    flexWrap: 'wrap',
   },
-  typeContainer: {
+  removeIconButton: {
+    marginLeft: 10,
+    backgroundColor: '#ffeded',
+    borderRadius: 12,
+    padding: 4,
+  },
+  removeIconText: {
+    color: '#ff4d4d',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  typeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 2,
     marginBottom: 4,
   },
   typeIcon: {
@@ -531,23 +531,30 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     color: '#666',
+    fontWeight: '500',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
   itemPrice: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
+    color: '#0014A8',
+    fontWeight: 'bold',
   },
   itemTotal: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0014A8',
-    marginBottom: 8,
+    fontSize: 13,
+    color: '#444',
+    fontWeight: '500',
   },
-  quantityControl: {
+  quantityRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
   },
-  quantityButton: {
+  qtyBtn: {
     backgroundColor: '#0014A8',
     width: 28,
     height: 28,
@@ -555,77 +562,84 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quantityText: {
+  qtyBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   quantity: {
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     fontSize: 16,
     minWidth: 20,
     textAlign: 'center',
-  },
-  removeButton: {
-    backgroundColor: '#ff4d4d',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginLeft: 'auto',
-  },
-  removeButtonText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  billSummary: {
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    margin: 10,
-    marginBottom: 5,
-  },
-  billTitle: {
-    fontSize: 18,
+    color: '#222',
     fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
+  },
+  billCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    marginHorizontal: 12,
+    marginBottom: 10,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#0014A8',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  totalRow: {
+  billLabel: {
+    color: '#666',
+    fontSize: 15,
+  },
+  billValue: {
+    color: '#222',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  billTotalRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#e6eaf2',
     marginTop: 8,
     paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
   },
-  totalAmount: {
+  billTotalLabel: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 17,
     color: '#0014A8',
   },
-  payButton: {
-    backgroundColor: '#0014A8',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 10,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+  billTotalValue: {
+    fontWeight: 'bold',
+    fontSize: 17,
+    color: '#0014A8',
   },
-  payButtonText: {
+  payBtn: {
+    backgroundColor: '#0014A8',
+    borderRadius: 8,
+    marginTop: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  payBtnText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
-  bottomNav: {
-    height: 60,
+  clearCartBtn: {
+    marginTop: 8,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  clearCartBtnText: {
+    color: '#ff4d4d',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
 

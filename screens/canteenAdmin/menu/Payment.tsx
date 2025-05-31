@@ -69,7 +69,7 @@ const Payment: React.FC<PaymentScreenProps> = ({ route }) => {
           throw new Error('No authorization token found');
         }
 
-        const response = await fetch('http://172.16.4.52:3002/api/cart/getCart', {
+        const response = await fetch('https://server.welfarecanteen.in/api/cart/getCart', {
           headers: {
             'Content-Type': 'application/json',
             authorization: token,
@@ -137,7 +137,7 @@ const Payment: React.FC<PaymentScreenProps> = ({ route }) => {
         return;
       }
 
-      const response = await fetch('http://172.16.4.52:3002/api/order/placeOrder', {
+      const response = await fetch('https://server.welfarecanteen.in/api/order/placeOrder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

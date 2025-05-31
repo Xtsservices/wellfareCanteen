@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -6,25 +6,33 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ScrollView,
+  Alert,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import DownNavbar from './downNavbar';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+import ViewShot, {captureRef} from 'react-native-view-shot';
 
 const ViewOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
+  const qrCodeRef = useRef<ViewShot>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const token = await AsyncStorage.getItem('authorization');
-        const response = await axios.get('http://172.16.4.52:3002/api/order/listOrders', {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: token || '',
+        const response = await axios.get(
+          'https://server.welfarecanteen.in/api/order/listOrders',
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: token || '',
+            },
           },
-        });
+        );
         setOrders(response.data.data || []);
       } catch (error: any) {
         console.error('Failed to fetch orders', error);
@@ -38,33 +46,100 @@ const ViewOrders: React.FC = () => {
     return date.toLocaleString();
   };
 
-  const renderOrder = ({ item }: { item: any }) => (
-    <View style={styles.orderItem}>
-      <View style={styles.orderDetails}>
-        <Text style={styles.orderNumber}>Order ID: {item.id}</Text>
-        <Text style={styles.session}>Status: {item.status}</Text>
-        <Text style={styles.dateTime}>Date: {formatDateTime(item.createdAt)}</Text>
-        <Text>Total: ₹{item.totalAmount}</Text>
-        <Text>Payment: {item.payment?.status} via {item.payment?.paymentMethod}</Text>
+  const isRecentOrder = (timestamp: number) => {
+    const orderDate = new Date(timestamp * 1000);
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000));
+    return orderDate > fortyEightHoursAgo;
+  };
 
-        <Text style={{ marginTop: 8, fontWeight: 'bold' }}>Items:</Text>
+  const SaveQrToGallery = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        let permission;
+        if (Platform.Version >= 33) {
+          permission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
+        } else {
+          permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
+        }
+        const granted = await PermissionsAndroid.request(permission, {
+          title: 'Storage Permission',
+          message: 'App needs access to storage to save QR code',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        });
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permission denied',
+            'Cannot save QR code without permission',
+          );
+          return;
+        }
+      }
+      if (qrCodeRef.current) {
+        const uri = await qrCodeRef.current.capture?.();
+        if (uri) {
+          await CameraRoll.save(uri, {type: 'photo'});
+          Alert.alert('Success', 'QR code saved to gallery!');
+        } else {
+          Alert.alert('Error', 'Failed to capture QR code');
+        }
+      } else {
+        Alert.alert('Error', 'QR code reference not found');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save QR code to gallery');
+    }
+  };
+
+  const renderOrder = ({item}: {item: any}) => (
+    <View style={styles.orderCard}>
+      <View style={styles.orderHeader}>
+        <Text style={styles.orderId}>Order #{item.id}</Text>
+        <Text
+          style={[
+            styles.status,
+            {color: item.status === 'completed' ? '#4CAF50' : '#FF9800'},
+          ]}>
+          {item.status.toUpperCase()}
+        </Text>
+      </View>
+      <Text style={styles.date}>{formatDateTime(item.createdAt)}</Text>
+      <View style={styles.amountRow}>
+        <Text style={styles.amountLabel}>Total:</Text>
+        <Text style={styles.amountValue}>₹{item.totalAmount}</Text>
+      </View>
+      <View style={styles.paymentRow}>
+        <Text style={styles.paymentLabel}>Payment:</Text>
+        <Text style={styles.paymentValue}>
+          {item.payment?.status} via {item.payment?.paymentMethod}
+        </Text>
+      </View>
+      <Text style={styles.itemsTitle}>Items:</Text>
+      <View style={styles.itemsList}>
         {item.orderItems.map((orderItem: any, index: number) => (
-          <Text key={index}>
-            {orderItem.menuItemItem.name} × {orderItem.quantity} = ₹{orderItem.total}
-          </Text>
+          <View key={index} style={styles.itemRow}>
+            <Text style={styles.itemName}>{orderItem.menuItemItem.name}</Text>
+            <Text style={styles.itemQty}>× {orderItem.quantity}</Text>
+          </View>
         ))}
       </View>
-
-      {item.qrCode && (
-        <Image
-          source={{ uri: item.qrCode }}
-          style={{ width: 60, height: 60, marginTop: 10 }}
-        />
+      {item.qrCode && isRecentOrder(item.createdAt) && (
+        <TouchableOpacity
+          style={styles.qrContainer}
+          activeOpacity={0.8}
+          onPress={SaveQrToGallery}>
+          <ViewShot ref={qrCodeRef} options={{format: 'png', quality: 1}}>
+            <Image
+              source={{uri: item.qrCode}}
+              style={styles.qrImage}
+              resizeMode="contain"
+            />
+          </ViewShot>
+          <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
+        </TouchableOpacity>
       )}
-
-      <TouchableOpacity style={styles.reorderButton}>
-        <Text style={styles.reorderText}>Re-Order</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -72,14 +147,12 @@ const ViewOrders: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          <Image
-            source={{
-              uri: 'https://www.joinindiannavy.gov.in/images/octaginal-crest.png',
-            }}
-            style={styles.logo}
-          />
-        </Text>
+        <Image
+          source={{
+            uri: 'https://welfarecanteen.in/public/Naval.jpg',
+          }}
+          style={styles.logo}
+        />
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconborder}>
             <Image
@@ -110,6 +183,9 @@ const ViewOrders: React.FC = () => {
         keyExtractor={item => item.id.toString()}
         renderItem={renderOrder}
         contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No orders found.</Text>
+        }
       />
 
       {/* Bottom Navbar */}
@@ -119,72 +195,148 @@ const ViewOrders: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  // ... [same as your current styles with optional fine-tuning] ...
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    marginTop: 50,
+    backgroundColor: '#F3F6FB',
+    marginTop: 0,
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 80,
+    paddingBottom: 90,
   },
-  orderItem: {
+  orderCard: {
     backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    elevation: 2,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 2},
+    elevation: 3,
   },
-  orderDetails: {
-    marginBottom: 8,
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  orderNumber: {
-    fontSize: 16,
+  orderId: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0014A8',
+  },
+  status: {
+    fontSize: 14,
     fontWeight: 'bold',
   },
-  session: {
-    fontSize: 14,
+  date: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 8,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  amountLabel: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  amountValue: {
+    fontWeight: 'bold',
+    color: '#0014A8',
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  paymentLabel: {
     color: '#555',
   },
-  dateTime: {
-    fontSize: 14,
+  paymentValue: {
     color: '#555',
+  },
+  itemsTitle: {
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 2,
+    color: '#0014A8',
+  },
+  itemsList: {
+    marginBottom: 10,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  itemName: {
+    flex: 2,
+    color: '#222',
+  },
+  itemQty: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#555',
+  },
+  itemTotal: {
+    flex: 1,
+    textAlign: 'right',
+    color: '#0014A8',
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  qrImage: {
+    width: 180,
+    height: 180,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  qrDownloadText: {
+    marginTop: 6,
+    color: '#0014A8',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
   reorderButton: {
-    backgroundColor: '#e0e0e0',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-    marginTop: 10,
+    backgroundColor: '#0014A8',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
   },
   reorderText: {
-    fontSize: 14,
-    color: '#000',
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#0014A8',
-    paddingVertical: 20,
-    padding: 30,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    alignItems: 'center',
   },
   logo: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
   },
   headerIcons: {
     flexDirection: 'row',
   },
   icon: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
   },
   iconborder: {
     backgroundColor: '#fff',
@@ -196,12 +348,14 @@ const styles = StyleSheet.create({
   },
   header1: {
     backgroundColor: 'white',
-    paddingVertical: 20,
-    padding: 30,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   headerTitle1: {
     color: '#0014A8',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   stckyNavbar: {
@@ -216,6 +370,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#ccc',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    marginTop: 40,
+    fontSize: 16,
   },
 });
 

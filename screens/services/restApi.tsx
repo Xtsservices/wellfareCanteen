@@ -1,7 +1,10 @@
-// const URL = "http://172.16.4.52:3002/api"
+// const URL = 'https://server.welfarecanteen.in/api';
 
-const URL = 'http://172.16.4.52:3002/api';
-const url1 = "http://TB351FU_RF01_250321:3002/api"
+// const URL = 'https://server.welfarecanteen.in/api';
+// const URL = "https://server.welfarecanteen.in/api"
+// const URL = "http://localhost:3002/api"
+// const URL = "http://10.0.2.2:3002/api"
+const URL = "https://server.welfarecanteen.in/api"
 
 export const Login = () => `${URL}/login`;
 export const VerifyOtp = () => `${URL}/verifyOtp`;
@@ -11,5 +14,3 @@ export const AllCanteens = () => `${URL}/user/getAllCanteens`;
 //   `${URL}/user/getMenuItems?canteenId=${canteenId}`;
 export const GetMenuItemsbyCanteenId = (canteenId: string) =>
   `${URL}/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=${canteenId}`;
-
-

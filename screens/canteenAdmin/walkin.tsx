@@ -104,7 +104,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
           return;
         }
         const response = await fetch(
-          `http://172.16.4.52:3002/api/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=`,
+          `https://server.welfarecanteen.in/api/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=`,
           {
             method: 'GET',
             headers: {
@@ -149,7 +149,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
       }
 
       const response = await fetch(
-        `http://172.16.4.52:3002/api/menu/getMenuById?id=${menuId}`,
+        `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
         {
           method: 'GET',
           headers: {
@@ -194,7 +194,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
       };
 
       const response = await fetch(
-        'http://172.16.4.52:3002/api/cart/add',
+        'https://server.welfarecanteen.in/api/cart/add',
         {
           method: 'POST',
           headers: {

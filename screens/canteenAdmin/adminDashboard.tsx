@@ -43,7 +43,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const token = await AsyncStorage.getItem('authorization');
-      const response = await fetch('http://172.16.4.52:3002/api/adminDasboard/dashboard', {
+      const response = await fetch('https://server.welfarecanteen.in/api/adminDasboard/dashboard', {
         headers: {
           'Authorization': token || '',
         },

@@ -14,7 +14,7 @@ import {RootStackParamList} from './navigationTypes';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DownNavbar from './downNavbar';
-import { SettingsScreenuri ,menuItemUri} from './imageUris/uris';
+import {SettingsScreenuri, menuItemUri} from './imageUris/uris';
 
 type MenuItemsByMenuIdScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -89,7 +89,7 @@ const MenuItemsByMenuIdScreen = () => {
         }
 
         const response = await axios.get(
-          `http://172.16.4.52:3002/api/menu/getMenuById?id=${menuId}`,
+          `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -157,6 +157,7 @@ const MenuItemsByMenuIdScreen = () => {
 
       const canteenId = await AsyncStorage.getItem('canteenId');
       const minQty = Number(item.minQuantity) || 1;
+      const date = await AsyncStorage.getItem('date');
 
       const payload = {
         itemId: Number(item.item.id),
@@ -164,10 +165,11 @@ const MenuItemsByMenuIdScreen = () => {
         menuId: Number(menuData?.id),
         canteenId: Number(canteenId),
         menuConfigurationId: Number(menuData?.menuConfiguration.id),
+        orderDate: date,
       };
 
       const response = await axios.post(
-        'http://172.16.4.52:3002/api/cart/add',
+        'https://server.welfarecanteen.in/api/cart/add',
         payload,
         {
           headers: {
@@ -179,7 +181,7 @@ const MenuItemsByMenuIdScreen = () => {
       console.log(response, 'response');
 
       const cartDataResponse = await axios.get(
-        'http://172.16.4.52:3002/api/cart/getCart',
+        'https://server.welfarecanteen.in/api/cart/getCart',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -269,7 +271,7 @@ const MenuItemsByMenuIdScreen = () => {
 
       // Fetch the cart to get the correct cartItemId for this item
       const cartResponse = await axios.get(
-        'http://172.16.4.52:3002/api/cart/getCart',
+        'https://server.welfarecanteen.in/api/cart/getCart',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -293,7 +295,7 @@ const MenuItemsByMenuIdScreen = () => {
       console.log(payload, 'payload');
 
       const response = await axios.post(
-        'http://172.16.4.52:3002/api/cart/updateCartItem',
+        'https://server.welfarecanteen.in/api/cart/updateCartItem',
         payload,
         {
           headers: {
@@ -335,7 +337,7 @@ const MenuItemsByMenuIdScreen = () => {
         };
 
         const response = await axios.post(
-          'http://172.16.4.52:3002/api/cart/removeCartItem',
+          'https://server.welfarecanteen.in/api/cart/removeCartItem',
           payload,
           {
             headers: {
@@ -375,7 +377,7 @@ const MenuItemsByMenuIdScreen = () => {
         };
 
         const response = await axios.post(
-          'http://172.16.4.52:3002/api/cart/updateCartItem',
+          'https://server.welfarecanteen.in/api/cart/updateCartItem',
           payload,
           {
             headers: {
@@ -430,18 +432,15 @@ const MenuItemsByMenuIdScreen = () => {
         <Text style={styles.headerTitle}>{menuData.name}</Text>
         <View style={styles.headerIcon}>
           <TouchableOpacity style={styles.iconborder}>
-            <Image
-              source={{uri:menuItemUri
-              }}
-              style={styles.icon}
-            />
+            <Image source={{uri: menuItemUri}} style={styles.icon} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconborder}
             onPress={() => navigation.navigate('SettingsScreen')}>
             <Image
               source={{
-                uri: SettingsScreenuri}}
+                uri: SettingsScreenuri,
+              }}
               style={styles.icon}
             />
           </TouchableOpacity>

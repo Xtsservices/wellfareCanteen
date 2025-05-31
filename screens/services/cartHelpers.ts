@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'http://172.16.4.52:3002/api';
+const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 
 // Get authorization token
 export const getAuthToken = async () => {
@@ -29,8 +29,7 @@ export const fetchCartData = async () => {
         authorization: token,
       },
     });
-    console.log(response?.data, "response data cart");
-    
+    console.log(response?.data, 'response data cart');
 
     if (response.data && response.data.data) {
       return response.data.data;
@@ -53,21 +52,25 @@ export const addItemToCart = async (
   try {
     const token = await getAuthToken();
     const canteenId = await AsyncStorage.getItem('canteenId');
-  //   {
-   
-  //     "itemId": 2,
-  //     "quantity": 3,
-  //     "menuId": 1,
-  //     "canteenId": 1,
-  //     "menuConfigurationId": 1
-  // }
-  
+    const date = await AsyncStorage.getItem('selectedDate');
+    console.log("datesssss", date);
+
+    //   {
+
+    //     "itemId": 2,
+    //     "quantity": 3,
+    //     "menuId": 1,
+    //     "canteenId": 1,
+    //     "menuConfigurationId": 1
+    // }
+
     const payload = {
       itemId: Number(itemId),
       quantity,
       menuId: Number(menuId),
       canteenId: Number(canteenId) || 1,
       menuConfigurationId: Number(menuConfigId),
+      orderDate: date,
     };
 
     console.log('Add item payload:', payload);
@@ -93,9 +96,15 @@ export const updateCartItemQuantity = async (
   cartItemId: number | string | undefined | null,
   quantity: number,
 ) => {
-  console.log(cartId,"cartId", cartItemId, "----cartitemid", quantity,"----quantity");
-  
-  
+  console.log(
+    cartId,
+    'cartId',
+    cartItemId,
+    '----cartitemid',
+    quantity,
+    '----quantity',
+  );
+
   try {
     const token = await getAuthToken();
 
@@ -126,9 +135,12 @@ export const updateCartItemQuantity = async (
 };
 
 // Remove item from cart
-export const removeCartItem = async (cartId: number, cartItemId: number | null | undefined) => {
-  console.log(cartId,"cartId", cartItemId, "----cartitemid------cartHelpers");
-  
+export const removeCartItem = async (
+  cartId: number,
+  cartItemId: number | null | undefined,
+) => {
+  console.log(cartId, 'cartId', cartItemId, '----cartitemid------cartHelpers');
+
   try {
     const token = await getAuthToken();
 
@@ -195,11 +207,14 @@ export const findCartItemByItemId = (
 export const fetchDashboardData = async () => {
   try {
     const token = await AsyncStorage.getItem('authorization');
-    const response = await fetch('http://172.16.4.52:3002/api/adminDasboard/dashboard', {
-      headers: {
-        'Authorization': token || '',
+    const response = await fetch(
+      'https://server.welfarecanteen.in/api/adminDasboard/dashboard',
+      {
+        headers: {
+          Authorization: token || '',
+        },
       },
-    });
+    );
     return await response.json();
   } catch (error) {
     console.error('API Error:', error);
@@ -210,11 +225,14 @@ export const fetchDashboardData = async () => {
 export const fetchRecentOrders = async () => {
   try {
     const token = await AsyncStorage.getItem('authorization');
-    const response = await fetch('http://172.16.4.52:3002/api/adminDasboard/getTotalOrders', {
-      headers: {
-        'Authorization': token || '',
+    const response = await fetch(
+      'https://server.welfarecanteen.in/api/adminDasboard/getTotalOrders',
+      {
+        headers: {
+          Authorization: token || '',
+        },
       },
-    });
+    );
     return await response.json();
   } catch (error) {
     console.error('API Error:', error);

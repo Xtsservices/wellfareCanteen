@@ -109,7 +109,7 @@ const MenuItemDetails: React.FC<MenuItemDetailsProps> = ({ navigation }) => {
       }
 
       const response = await fetch(
-        `http://172.16.4.52:3002/api/menu/getMenuById?id=${menuId}`,
+        `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
         {
           method: 'GET',
           headers: {

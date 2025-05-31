@@ -62,7 +62,7 @@ const MenuItemsByMenuIdScreenNew = () => {
         }
 
         const response = await fetch(
-          `http://172.16.4.52:3002/api/menu/getMenuById?id=${menuId}`,
+          `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -89,6 +89,7 @@ const MenuItemsByMenuIdScreenNew = () => {
           } else {
             setMenuData(data.data);
           }
+          console.log(data.data, 'menuData---menuItemsByMenuIdScreenNew');
         } else {
           setError('No menu data found');
         }
@@ -345,276 +346,309 @@ const MenuItemsByMenuIdScreenNew = () => {
 
   return (
     <>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          <Image
-            source={{
-              uri: 'https://www.joinindiannavy.gov.in/images/octaginal-crest.png',
-            }}
-            style={styles.logo}
-          />
-        </Text>
-        <View style={styles.headerIcon}>
-          <TouchableOpacity style={styles.iconborder}>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <Image
+          source={{
+            uri: 'https://welfarecanteen.in/public/Naval.jpg',
+          }}
+          style={styles.headerLogo}
+        />
+        <Text style={styles.headerTitleText}>{menuData?.name || 'Menu'}</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.headerIconBtn}>
             <Image
               source={{
                 uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
               }}
-              style={styles.icon}
+              style={styles.headerIconImg}
             />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.iconborder}
+            style={styles.headerIconBtn}
             onPress={() => navigation.navigate('SettingsScreen')}>
             <Image
               source={{
                 uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
               }}
-              style={styles.icon}
+              style={styles.headerIconImg}
             />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {menuData?.menuItems?.map((item: any) => {
-            console.log(item, 'mapping--item-menudata');
-            return (
-              <View key={item.id} style={styles.menuCardRow}>
-                {/* Image on the left */}
+      <ScrollView contentContainerStyle={styles.menuListContainer}>
+        {menuData?.menuItems?.map((item: any) => (
+          <View key={item.id} style={styles.menuCard}>
+            <Image
+              source={{
+                uri: item?.item?.image
+                  ? `data:image/png;base64,${item?.item?.image}`
+                  : 'https://via.placeholder.com/120',
+              }}
+              style={styles.menuCardImage}
+            />
+            <View style={styles.menuCardContent}>
+              <View style={styles.menuCardHeader}>
+                <Text style={styles.menuCardName}>{item?.item?.name}</Text>
+                <Text style={styles.menuCardPrice}>₹{item.item.pricing.price}</Text>
+              </View>
+              <View style={styles.menuCardTypeRow}>
                 <Image
                   source={{
-                    uri: item?.item?.image
-                      ? `data:image/png;base64,${item?.item?.image}`
-                      : 'https://via.placeholder.com/120',
+                    uri:
+                      item?.item?.type?.toLowerCase() === 'veg'
+                        ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
+                        : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
                   }}
-                  style={styles.menuItemImage}
+                  style={styles.menuCardTypeIcon}
                 />
-                {/* Details on the right */}
-                <View style={styles.menuCardDetails}>
-                  <View style={styles.menuItemHeaderRow}>
-                    <Text style={styles.menuItemName}>{item?.item?.name}</Text>
-                    <Text style={styles.menuItemPrice}>
-                      ₹{item.item.pricing.price}
-                    </Text>
-                  </View>
-                  <View style={styles.vegIconRow}>
-                    <Image
-                      source={{
-                        uri:
-                          item?.item?.type?.toLowerCase() === 'veg'
-                            ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
-                            : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
-                      }}
-                      style={{width: 18, height: 18, marginRight: 8}}
-                    />
-                    <Text style={styles.menuItemType}>
-                      {item?.item?.type?.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.menuItemDescription}>
-                    {item.item.description}
-                  </Text>
-                  <View style={styles.addButtonContainerRow}>
-                    {updateLoading === item.id ? (
-                      <ActivityIndicator size="small" color="#0014A8" />
-                    ) : !cartItems[item.item.id] ? (
-                      <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={() => addToCart(item, menuData)}>
-                        <Text style={styles.addButtonText}>ADD</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={styles.quantityControlRow}>
-                        <TouchableOpacity
-                          style={styles.quantityButton}
-                          onPress={() => decreaseQuantity(item)}>
-                          <Text style={styles.quantityButtonText}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.quantityText}>
-                          {cartItems[item.item.id]?.quantity || 0}
-                        </Text>
-                        <TouchableOpacity
-                          style={styles.quantityButton}
-                          onPress={() => increaseQuantity(item)}>
-                          <Text style={styles.quantityButtonText}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                </View>
+                <Text style={styles.menuCardTypeText}>
+                  {item?.item?.type?.toUpperCase()}
+                </Text>
               </View>
-            );
-          })}
-        </ScrollView>
-        {/* Go to Cart Button */}
-        {Object.keys(cartItems).length > 0 && (
-          <TouchableOpacity
-            style={styles.goToCartButton}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('CartPage' as never)}>
-            <Text style={styles.goToCartButtonText}>Go to Cart</Text>
-          </TouchableOpacity>
-        )}
-        <DownNavbar />
-      </View>
+              <Text style={styles.menuCardDesc} numberOfLines={2}>
+                {item.item.description}
+              </Text>
+              <View style={styles.menuCardActionRow}>
+                {updateLoading === item.id ? (
+                  <ActivityIndicator size="small" color="#0014A8" />
+                ) : !cartItems[item.item.id] ? (
+                  <TouchableOpacity
+                    style={styles.menuCardAddBtn}
+                    onPress={() => addToCart(item, menuData)}>
+                    <Text style={styles.menuCardAddBtnText}>ADD</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.menuCardQtyRow}>
+                    <TouchableOpacity
+                      style={styles.menuCardQtyBtn}
+                      onPress={() => decreaseQuantity(item)}>
+                      <Text style={styles.menuCardQtyBtnText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.menuCardQtyText}>
+                      {cartItems[item.item.id]?.quantity || 0}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.menuCardQtyBtn}
+                      onPress={() => increaseQuantity(item)}>
+                      <Text style={styles.menuCardQtyBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Go to Cart Button */}
+      {Object.keys(cartItems).length > 0 && (
+        <TouchableOpacity
+          style={styles.goToCartButton}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('CartPage' as never)}>
+          <Text style={styles.goToCartButtonText}>Go to Cart</Text>
+        </TouchableOpacity>
+      )}
+      <DownNavbar />
     </>
   );
 };
 
+// Improved styles for a modern, clean look
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-  },
-  scrollContainer: {
-    paddingBottom: 80, // Space for navbar
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0014A8',
-    paddingVertical: 20,
-    padding: 30,
-    marginTop: 50,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  headerIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  icon: {
-    width: 30,
-    height: 30,
-  },
-  iconborder: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    padding: 7,
-    marginLeft: 10,
+    backgroundColor: '#f7f8fa',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuCardRow: {
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0014A8',
+    paddingTop: 48,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    elevation: 4,
+  },
+  headerLogo: {
+    width: 38,
+    height: 38,
+    resizeMode: 'contain',
+    marginRight: 8,
+  },
+  headerTitleText: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIconBtn: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  headerIconImg: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+
+  menuListContainer: {
+    padding: 16,
+    paddingBottom: 120,
+    backgroundColor: '#f7f8fa',
+  },
+  menuCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    padding: 16,
+    borderRadius: 14,
+    marginBottom: 18,
+    elevation: 2,
+    shadowColor: '#0014A8',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    padding: 12,
     alignItems: 'flex-start',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
-  menuItemImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 16,
+  menuCardImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 14,
+    backgroundColor: '#eaeaea',
   },
-  menuCardDetails: {
+  menuCardContent: {
     flex: 1,
     flexDirection: 'column',
+    justifyContent: 'space-between',
   },
-  menuItemHeaderRow: {
+  menuCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 2,
   },
-  menuItemName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  menuCardName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#222',
     flex: 1,
+    marginRight: 8,
   },
-  menuItemPrice: {
-    fontSize: 18,
+  menuCardPrice: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 16,
+    color: '#0014A8',
+    marginLeft: 8,
   },
-  vegIconRow: {
+  menuCardTypeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: 2,
   },
-  menuItemType: {
+  menuCardTypeIcon: {
+    width: 16,
+    height: 16,
+    marginRight: 6,
+  },
+  menuCardTypeText: {
     fontSize: 12,
-    color: '#888',
-  },
-  menuItemDescription: {
-    fontSize: 14,
     color: '#666',
-    marginBottom: 12,
-    lineHeight: 20,
+    fontWeight: '500',
   },
-  addButtonContainerRow: {
+  menuCardDesc: {
+    fontSize: 13,
+    color: '#666',
+    marginVertical: 4,
+    lineHeight: 18,
+  },
+  menuCardActionRow: {
     marginTop: 8,
     alignItems: 'flex-start',
   },
-  addButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 4,
+  menuCardAddBtn: {
+    backgroundColor: '#0014A8',
+    paddingVertical: 7,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    alignItems: 'center',
+    elevation: 1,
   },
-  addButtonText: {
+  menuCardAddBtnText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
+    letterSpacing: 1,
   },
-  quantityControlRow: {
+  menuCardQtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-    padding: 4,
+    backgroundColor: '#f0f2f5',
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
   },
-  quantityButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  menuCardQtyBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#d1d5db',
+    marginHorizontal: 2,
   },
-  quantityButtonText: {
+  menuCardQtyBtnText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0014A8',
+  },
+  menuCardQtyText: {
+    marginHorizontal: 10,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#222',
   },
-  quantityText: {
-    marginHorizontal: 12,
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+
   goToCartButton: {
     position: 'absolute',
     bottom: 70,
-    left: 20,
-    right: 20,
+    left: 30,
+    right: 30,
     backgroundColor: '#0014A8',
-    borderRadius: 25,
-    paddingVertical: 14,
+    borderRadius: 30,
+    paddingVertical: 16,
     alignItems: 'center',
     zIndex: 10,
-    elevation: 5,
+    elevation: 6,
+    shadowColor: '#0014A8',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   goToCartButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
+    letterSpacing: 1,
   },
   loadingText: {
     color: '#333',

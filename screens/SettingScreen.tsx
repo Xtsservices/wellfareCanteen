@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from './navigationTypes';
 
@@ -22,7 +23,13 @@ interface SettingsScreenProps {
 const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Remove token from storage (example using AsyncStorage)
+    try {
+      await AsyncStorage.removeItem('token');
+    } catch (e) {
+      // handle error if needed
+    }
     setIsLoggedIn(false);
     navigation.replace('Login');
   };
@@ -57,7 +64,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
           {/* Menu Items */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate('ProfileScreen')}>
+            >
             <Image
               style={styles.profile}
               source={{
@@ -92,7 +99,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate('NotificationsScreen')}>
+            >
             <Image
               style={styles.profile}
               source={{
@@ -117,8 +124,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>proposed by</Text>
-          <Text style={styles.footerLogo}> WATABE</Text>
+          <Text style={styles.footerText}>Powered By</Text>
+          <Text style={styles.footerLogo}>WorldTek.in</Text>
         </View>
       </ScrollView>
     </View>

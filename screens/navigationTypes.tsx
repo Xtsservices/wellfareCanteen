@@ -68,6 +68,7 @@ export type RootStackParamList = {
     total: number;
   };  
   Home: undefined;
+  Splash: undefined;
   Login: undefined;
   Dashboard: { canteenId: string };
   CartPage: undefined;
@@ -75,7 +76,7 @@ export type RootStackParamList = {
   ViewOrders: undefined;
   PaymentMethod: undefined;
   VerifyToken: undefined;
-  MenubyMenuId: {menuId: string};
+  MenubyMenuId: { menuId: string; date: string };
   orderhistory: undefined;
   MenuItemsByMenuId: { menuId: string };
   Orders : undefined;
@@ -84,4 +85,5 @@ export type RootStackParamList = {
     cartId?: string;
     totalAmount?: number;
   };
+  PaymentServices: { paymentLink: any }
 };

@@ -79,14 +79,13 @@ const CallCenterScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          <Image
-            source={{
-              uri: 'https://www.joinindiannavy.gov.in/images/octaginal-crest.png',
-            }}
-            style={styles.logo}
-          />
-        </Text>
+        <Image
+          source={{
+            uri: 'https://welfarecanteen.in/public/Naval.jpg',
+          }}
+          style={styles.logo}
+        />
+        <Text style={styles.headerTitle}>Call Center</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconborder}>
             <Image
@@ -107,14 +106,37 @@ const CallCenterScreen: React.FC = () => {
         </View>
       </View>
 
+      <Text style={styles.canteenName}>
+        Welcome to Welfare Canteen Call Center
+      </Text>
+
       <View style={styles.content}>
         {[1, 2, 3].map(option => (
           <TouchableOpacity
             key={option}
-            style={styles.card}
+            style={[
+              styles.card,
+              {
+                backgroundColor:
+                  option === 1
+                    ? '#e3f2fd'
+                    : option === 2
+                    ? '#fff3e0'
+                    : '#e8f5e9',
+              },
+            ]}
             onPress={() => handleApiCall(option)}
-            activeOpacity={0.7}>
-            <Text style={styles.label}>Option {option}</Text>
+            activeOpacity={0.85}>
+            <Text style={[styles.label, {color: '#0014A8'}]}>
+              Call Option {option}
+            </Text>
+            <Text style={{color: '#555', fontSize: 14, marginTop: 4}}>
+              {option === 1
+                ? 'Customer Support'
+                : option === 2
+                ? 'Technical Support'
+                : 'General Inquiry'}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -126,21 +148,16 @@ const CallCenterScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'White',
+    marginTop: 50,
   },
-  content: {flex: 1, justifyContent: 'center', alignItems: 'center'},
-  card: {
-    width: '90%',
-    padding: 20,
+  canteenName: {
+    color: '#0014A8',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
     marginVertical: 10,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 10,
-    alignItems: 'center',
-    elevation: 2,
   },
-  label: {fontSize: 18, fontWeight: 'bold', marginBottom: 8},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -173,6 +190,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  content: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  card: {
+    width: '90%',
+    padding: 20,
+    marginVertical: 10,
+    backgroundColor: '#f2f2f2',
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  label: {fontSize: 18, fontWeight: 'bold', marginBottom: 8},
 });
 
 export default CallCenterScreen;
