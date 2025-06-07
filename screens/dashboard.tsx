@@ -59,10 +59,8 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
 
         console.log('Token:', token);
         console.log('Valid Canteen ID:', validCanteenId);
-        
 
         const response = await axios.get(
-           
           GetMenuItemsbyCanteenId(validCanteenId),
           {
             headers: {
@@ -153,7 +151,9 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
           <Text style={styles.headerTitle}>Welfare Canteen</Text>
         </View>
         <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconborder}>
+          <TouchableOpacity
+            style={styles.iconborder}
+            onPress={() => navigation.navigate('WalletScreen')}>
             <Image
               source={{
                 uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',

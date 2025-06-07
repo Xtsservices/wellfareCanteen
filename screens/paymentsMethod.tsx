@@ -51,27 +51,49 @@ const PaymentMethod = ({navigation}: any) => {
         body: JSON.stringify({paymentMethod: selectedMethod}),
       });
       const data = await response.json();
-      if (response.ok && data.data) {
-        setOrderResponse(data.data);
-        if (
-          selectedMethod === 'online' &&
-          data.data.payment &&
-          data.data?.paymentlink
-        ) {
-          setPaymentLink(data.data?.paymentlink);
-          setShowWebView(true);
-        } else {
+
+      console.log('Full API Response:', data.data?.paymentlink);
+
+      if (response.ok && data) {
+        setOrderResponse(data);
+
+        // Check for payment link with different possible property names
+        const possiblePaymentLink =
+          data.data?.paymentlink ||
+          data.paymentLink ||
+          data.payment_link ||
+          data.link;
+
+        console.log('Possible Payment Link:', possiblePaymentLink);
+
+        if (selectedMethod === 'online' && possiblePaymentLink) {
+          console.log('Payment Link Found:', possiblePaymentLink);
+          setPaymentLink(possiblePaymentLink);
+
+          // Reset other states before showing WebView
+          setShowOrderDetails(false);
+
+          // Add a small delay to ensure state is updated
+          setTimeout(() => {
+            setShowWebView(true);
+          }, 100);
+        } else if (selectedMethod === 'online' && !possiblePaymentLink) {
+          console.log('No payment link found in response for online payment');
+          Alert.alert('Error', 'Payment link not received from server');
           setShowOrderDetails(true);
+        } else {
+          // For cash payments or when no payment link is needed
+          setShowOrderDetails(true);
+          if (selectedMethod === 'Cash') {
+            Alert.alert('Order Placed Successfully');
+          }
         }
-        if (selectedMethod === 'Cash') {
-          Alert.alert('Order Placed Successfully');
-        }
-        console.log('Order Response:', data.data?.paymentlink);
-        // console.log('Payment Link:', data?.paymentlink);
       } else {
-        Alert.alert('Payment Failed', 'Please try again.');
+        console.log('API Error Response:', data);
+        Alert.alert('Payment Failed', data.message || 'Please try again.');
       }
     } catch (error) {
+      console.error('Payment error:', error);
       Alert.alert('Error', 'Could not process payment.');
     } finally {
       setLoading(false);
@@ -97,13 +119,17 @@ const PaymentMethod = ({navigation}: any) => {
         body: JSON.stringify({paymentMethod: 'online'}),
       });
       const data = await response.json();
-      if (response.ok && data.data) {
-        setOrderResponse(data.data);
+      if (response.ok && data) {
+        setOrderResponse(data);
         setShowOrderDetails(true);
+        setShowWebView(false);
+        setPaymentLink(null);
       } else {
         Alert.alert('Failed', 'Could not fetch order details.');
       }
+      console.log('Order Response after payment:', data);
     } catch (error) {
+      console.error('Fetch order details error:', error);
       Alert.alert('Error', 'Could not fetch order details.');
     } finally {
       setLoading(false);
@@ -112,15 +138,37 @@ const PaymentMethod = ({navigation}: any) => {
 
   // Handle WebView navigation state change (detect payment completion)
   const handleWebViewNavigationStateChange = (navState: any) => {
-    // You may need to adjust this logic based on your payment gateway's redirect URL
+    console.log('WebView navigation state:', navState.url);
+    console.log('WebView can go back:', navState.canGoBack);
+    console.log('WebView loading:', navState.loading);
+
+    // Check for success URLs (adjust these based on your payment gateway)
     if (
       navState.url &&
       (navState.url.includes('success') ||
-        navState.url.includes('order-complete'))
+        navState.url.includes('order-complete') ||
+        navState.url.includes('payment-success') ||
+        navState.url.includes('status=success') ||
+        navState.url.includes('payment_status=success'))
     ) {
+      console.log('Payment success detected, closing WebView');
       setShowWebView(false);
       setPaymentLink(null);
       fetchOrderDetails();
+    }
+
+    // Check for failure URLs
+    if (
+      navState.url &&
+      (navState.url.includes('failure') ||
+        navState.url.includes('cancel') ||
+        navState.url.includes('error') ||
+        navState.url.includes('status=failure'))
+    ) {
+      console.log('Payment failure/cancellation detected');
+      Alert.alert('Payment Failed', 'Payment was not completed successfully.');
+      setShowWebView(false);
+      setPaymentLink(null);
     }
   };
 
@@ -155,6 +203,7 @@ const PaymentMethod = ({navigation}: any) => {
       await CameraRoll.saveAsset(uri, {type: 'photo'});
       Alert.alert('Success', 'QR code saved to gallery!');
     } catch (error) {
+      console.error('Save QR error:', error);
       Alert.alert('Error', 'Failed to save QR code to gallery');
     }
   };
@@ -170,6 +219,32 @@ const PaymentMethod = ({navigation}: any) => {
   const handleOrderDetails = () => {
     navigation.navigate('ViewOrders' as never);
   };
+
+  const handleBackFromWebView = () => {
+    console.log('Back button pressed in WebView');
+    setShowWebView(false);
+    setPaymentLink(null);
+    // Show order details if we have order response
+    if (orderResponse) {
+      setShowOrderDetails(true);
+    }
+  };
+
+  // Debug function to test WebView directly
+  const testWebView = () => {
+    console.log('Testing WebView with google.com');
+    setPaymentLink('https://google.com');
+    setShowWebView(true);
+  };
+
+  console.log('Current state:', {
+    showWebView,
+    paymentLink,
+    showOrderDetails,
+    selectedMethod,
+    hasOrderResponse: !!orderResponse,
+  });
+
   return (
     <View style={styles.container}>
       {/* Top Header */}
@@ -205,199 +280,214 @@ const PaymentMethod = ({navigation}: any) => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 90}}>
-        <View style={[styles.header, {marginTop: 10}]}>
-          <Image
-            source={{
-              uri: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4d/Indian_Navy_crest.svg/1200px-Indian_Navy_crest.svg.png',
-            }}
-            style={[styles.logo, {width: 60, height: 60}]}
-          />
-          <Text style={[styles.title, {fontSize: 24, marginTop: 15}]}>
-            {orderResponse ? 'Order Details' : 'Choose Payment Method'}
-          </Text>
-        </View>
-
-        {/* Payment Options */}
-        {!orderResponse && !showWebView && (
-          <>
-            <View style={[styles.paymentOptions, {marginVertical: 30}]}>
-              <TouchableOpacity
-                style={[
-                  styles.option,
-                  selectedMethod === 'online' && {
-                    borderColor: '#000080',
-                    borderWidth: 2,
-                    backgroundColor: '#e6eaff',
-                  },
-                  {
-                    marginBottom: 0,
-                    marginHorizontal: 5,
-                    width: 90,
-                    height: 90,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  },
-                ]}
-                onPress={() => setSelectedMethod('online')}>
-                <Image
-                  source={{
-                    uri: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/PhonePe_Logo.png',
-                  }}
-                  style={[styles.icon, {width: 45, height: 45}]}
-                />
-                <Text style={[styles.optionText, {marginTop: 5, fontSize: 13}]}>
-                  UPI
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.option,
-                  selectedMethod === 'Cash' && {
-                    borderColor: '#000080',
-                    borderWidth: 2,
-                    backgroundColor: '#e6eaff',
-                  },
-                  {
-                    marginBottom: 0,
-                    marginHorizontal: 5,
-                    width: 90,
-                    height: 90,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  },
-                ]}
-                onPress={() => setSelectedMethod('Cash')}>
-                <Image
-                  source={{
-                    uri: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                  }}
-                  style={[styles.icon, {width: 45, height: 45}]}
-                />
-                <Text style={[styles.optionText, {marginTop: 5, fontSize: 13}]}>
-                  Cash
-                </Text>
-              </TouchableOpacity>
-            </View>
+      {/* WebView for Online Payment - Full Screen when active */}
+      {showWebView && paymentLink ? (
+        <View style={styles.webViewContainer}>
+          <View style={styles.webViewHeader}>
             <TouchableOpacity
-              style={[
-                styles.payButton,
-                {
-                  marginTop: 10,
-                  backgroundColor: loading ? '#b3b3cc' : '#000080',
-                },
-              ]}
-              onPress={handlePayment}
-              disabled={loading || !selectedMethod}>
-              <Text style={styles.payButtonText}>
-                {loading ? 'Processing...' : 'PAY'}
-              </Text>
+              style={styles.backButton}
+              onPress={handleBackFromWebView}>
+              <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
-          </>
-        )}
-
-        {/* WebView for Online Payment */}
-        {showWebView && paymentLink ? (
-          <View
-            style={{
-              height: 600,
-              width: '100%',
-              backgroundColor: '#fff',
-              flex: 1,
-            }}>
-            <WebView
-              source={{uri: paymentLink}}
-              onNavigationStateChange={handleWebViewNavigationStateChange}
-              startInLoadingState
-              renderLoading={() => (
-                <ActivityIndicator size="large" color="#000080" />
-              )}
-              onShouldStartLoadWithRequest={() => true}
-              // The following prop is Android only and disables SSL checks (for dev only)
-              androidHardwareAccelerationDisabled={false}
-              // You can use the below prop with a custom native module to ignore SSL errors, but it's not recommended
-            />
-            <TouchableOpacity
-              style={[
-                styles.payButton,
-                {marginTop: 10, backgroundColor: '#000080'},
-              ]}
-              onPress={handleOrderDetails}>
-              <Text style={styles.payButtonText}>Back to Order Details</Text>
-            </TouchableOpacity>
+            <Text style={styles.webViewTitle}>Complete Payment</Text>
           </View>
-        ) : null}
+          <WebView
+            source={{uri: paymentLink}}
+            onNavigationStateChange={handleWebViewNavigationStateChange}
+            startInLoadingState={true}
+            renderLoading={() => (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#000080" />
+                <Text style={styles.loadingText}>Loading payment page...</Text>
+              </View>
+            )}
+            onShouldStartLoadWithRequest={request => {
+              console.log('WebView attempting to load:', request.url);
+              return true;
+            }}
+            onLoadStart={syntheticEvent => {
+              console.log(
+                'WebView load start:',
+                syntheticEvent.nativeEvent.url,
+              );
+            }}
+            onLoadEnd={syntheticEvent => {
+              console.log('WebView load end:', syntheticEvent.nativeEvent.url);
+            }}
+            androidHardwareAccelerationDisabled={false}
+            style={styles.webView}
+            scalesPageToFit={true}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            allowsInlineMediaPlayback={true}
+            mixedContentMode="compatibility"
+            onError={syntheticEvent => {
+              const {nativeEvent} = syntheticEvent;
+              console.error('WebView error: ', nativeEvent);
+              Alert.alert(
+                'Payment Error',
+                'Failed to load payment page. Please try again.',
+                [
+                  {
+                    text: 'Retry',
+                    onPress: () => {
+                      console.log('Retrying WebView load');
+                      setShowWebView(false);
+                      setTimeout(() => setShowWebView(true), 500);
+                    },
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: handleBackFromWebView,
+                    style: 'cancel',
+                  },
+                ],
+              );
+            }}
+            onHttpError={syntheticEvent => {
+              console.error('WebView HTTP error:', syntheticEvent.nativeEvent);
+            }}
+          />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 90}}>
+          <View style={[styles.header, {marginTop: 10}]}>
+            <Image
+              source={{
+                uri: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4d/Indian_Navy_crest.svg/1200px-Indian_Navy_crest.svg.png',
+              }}
+              style={[styles.logo, {width: 60, height: 60}]}
+            />
+            <Text style={[styles.title, {fontSize: 24, marginTop: 15}]}>
+              {orderResponse ? 'Order Details' : 'Choose Payment Method'}
+            </Text>
+          </View>
 
-        {/* Order Details */}
-        {orderResponse && showOrderDetails && (
-          <>
+          {/* Debug Button - Remove this in production */}
+          {__DEV__ && (
             <TouchableOpacity
-              style={styles.toggleButton}
-              onPress={() => setShowOrderDetails(prev => !prev)}>
-              <Text style={styles.toggleButtonText}>
-                {showOrderDetails ? 'Hide Order Details' : 'Show Order Details'}
-              </Text>
+              style={[
+                styles.payButton,
+                {backgroundColor: 'orange', marginBottom: 10},
+              ]}
+              onPress={testWebView}>
+              <Text style={styles.payButtonText}>Test WebView (Debug)</Text>
             </TouchableOpacity>
-            {showOrderDetails && (
+          )}
+
+          {/* Payment Options */}
+          {!orderResponse && (
+            <>
+              <View style={[styles.paymentOptions, {marginVertical: 30}]}>
+                <TouchableOpacity
+                  style={[
+                    styles.option,
+                    selectedMethod === 'online' && {
+                      borderColor: '#000080',
+                      borderWidth: 2,
+                      backgroundColor: '#e6eaff',
+                    },
+                    {
+                      marginBottom: 0,
+                      marginHorizontal: 5,
+                      width: 90,
+                      height: 90,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    },
+                  ]}
+                  onPress={() => setSelectedMethod('online')}>
+                  <Image
+                    source={{
+                      uri: 'https://cdn.zeebiz.com/sites/default/files/2024/01/03/274966-upigpay.jpg',
+                    }}
+                    style={[styles.icon, {width: 45, height: 45}]}
+                  />
+                  <Text
+                    style={[styles.optionText, {marginTop: 5, fontSize: 13}]}>
+                    UPI
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.payButton,
+                  {
+                    marginTop: 10,
+                    backgroundColor: loading ? '#b3b3cc' : '#000080',
+                  },
+                ]}
+                onPress={handlePayment}
+                disabled={loading || !selectedMethod}>
+                <Text style={styles.payButtonText}>
+                  {loading ? 'Processing...' : 'PAY'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Order Details */}
+          {orderResponse && showOrderDetails && (
+            <>
               <View style={styles.orderDetailsContainer}>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Order ID:</Text>
-                  <Text style={styles.detailValue}>
-                    {orderResponse.order.id}
-                  </Text>
+                  <Text style={styles.detailValue}>{orderResponse.id}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Total Amount:</Text>
                   <Text style={styles.detailValue}>
-                    ₹{orderResponse.order.totalAmount}
+                    ₹{orderResponse.totalAmount}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Payment Method:</Text>
+                  <Text style={styles.detailLabel}>Status:</Text>
+                  <Text style={styles.detailValue}>{orderResponse.status}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Remaining Amount:</Text>
                   <Text style={styles.detailValue}>
-                    {orderResponse.payment.paymentMethod}
+                    ₹{orderResponse.payments?.remainingAmount || 0}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Gateway Charges:</Text>
+                  <Text style={styles.detailLabel}>Wallet Payment:</Text>
                   <Text style={styles.detailValue}>
-                    ₹{orderResponse.payment.gatewayCharges}
+                    ₹{orderResponse.payments?.walletPaymentAmount || 0}
                   </Text>
                 </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Total Paid:</Text>
-                  <Text style={styles.detailValue}>
-                    ₹{orderResponse.payment.totalAmount}
-                  </Text>
-                </View>
-                <ViewShot ref={qrCodeRef} style={styles.qrCodeContainer}>
-                  <Text style={styles.qrCodeTitle}>Order QR Code:</Text>
-                  <Image
-                    source={{uri: orderResponse.order.qrCode}}
-                    style={styles.qrCodeImage}
-                  />
-                  <TouchableOpacity
-                    onPress={SaveQrToGallery}
-                    style={{marginTop: 20}}>
+
+                {orderResponse.qrCode && (
+                  <ViewShot ref={qrCodeRef} style={styles.qrCodeContainer}>
+                    <Text style={styles.qrCodeTitle}>Order QR Code:</Text>
                     <Image
-                      source={{
-                        uri: 'https://cdn-icons-png.flaticon.com/512/724/724933.png',
-                      }}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        resizeMode: 'contain',
-                        tintColor: '#000080',
-                      }}
+                      source={{uri: orderResponse.qrCode}}
+                      style={styles.qrCodeImage}
                     />
-                  </TouchableOpacity>
-                </ViewShot>
+                    <TouchableOpacity
+                      onPress={SaveQrToGallery}
+                      style={{marginTop: 20}}>
+                      <Image
+                        source={{
+                          uri: 'https://cdn-icons-png.flaticon.com/512/724/724933.png',
+                        }}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          resizeMode: 'contain',
+                          tintColor: '#000080',
+                        }}
+                      />
+                    </TouchableOpacity>
+                  </ViewShot>
+                )}
               </View>
-            )}
-          </>
-        )}
-      </ScrollView>
-      <DownNavbar style={styles.stickyNavbar} />
+            </>
+          )}
+        </ScrollView>
+      )}
+
+      {!showWebView && <DownNavbar style={styles.stickyNavbar} />}
     </View>
   );
 };
@@ -522,7 +612,6 @@ const styles = StyleSheet.create({
     padding: 15,
     marginHorizontal: '5%',
     marginBottom: 20,
-    maxHeight: 700,
   },
   detailRow: {
     flexDirection: 'row',
@@ -532,9 +621,12 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
   },
   detailValue: {
     color: '#555',
+    flex: 1,
+    textAlign: 'right',
   },
   qrCodeContainer: {
     alignItems: 'center',
@@ -549,6 +641,50 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     resizeMode: 'contain',
+  },
+  webViewContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  webViewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000080',
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    elevation: 4,
+    shadowColor: '#000',
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 5,
+    marginRight: 15,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  webViewTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  webView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#000080',
+    fontSize: 16,
   },
 });
 

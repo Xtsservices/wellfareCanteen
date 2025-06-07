@@ -2,8 +2,8 @@
 
 // const URL = 'https://server.welfarecanteen.in/api';
 // const URL = "https://server.welfarecanteen.in/api"
-// const URL = "http://localhost:3002/api"
-// const URL = "http://10.0.2.2:3002/api"
+// const URL = "https://server.welfarecanteen.in/api"
+// const URL = "https://server.welfarecanteen.in/api"
 const URL = "https://server.welfarecanteen.in/api"
 
 export const Login = () => `${URL}/login`;

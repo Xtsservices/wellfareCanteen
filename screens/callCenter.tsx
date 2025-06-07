@@ -70,7 +70,8 @@ const CallCenterScreen: React.FC = () => {
       });
 
       const data = await response.json();
-      Alert.alert(`Option ${option} API Response`, JSON.stringify(data));
+      // Alert.alert(`Option ${option} API Response`, JSON.stringify(data));
+      Alert.alert("Call Initiated, Please wait for the call to connect.");
     } catch (error) {
       Alert.alert('Error', 'Failed to call the API');
     }

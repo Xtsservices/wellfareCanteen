@@ -18,6 +18,9 @@ import ViewShot, {captureRef} from 'react-native-view-shot';
 
 const ViewOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
+  const [cancellingOrders, setCancellingOrders] = useState<Set<number>>(
+    new Set(),
+  );
   const qrCodeRef = useRef<ViewShot>(null);
 
   useEffect(() => {
@@ -49,8 +52,82 @@ const ViewOrders: React.FC = () => {
   const isRecentOrder = (timestamp: number) => {
     const orderDate = new Date(timestamp * 1000);
     const now = new Date();
-    const fortyEightHoursAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000));
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
     return orderDate > fortyEightHoursAgo;
+  };
+
+  const canCancelOrder = (status: string) => {
+    // Allow cancellation for all statuses except already cancelled
+    return status.toLowerCase() !== 'cancelled';
+  };
+
+  const cancelOrder = async (orderId: number, currentStatus: string) => {
+    // Additional check for already cancelled orders
+    if (currentStatus.toLowerCase() === 'cancelled') {
+      Alert.alert('Info', 'This order has already been cancelled.');
+      return;
+    }
+
+    Alert.alert(
+      'Cancel Order',
+      `Are you sure you want to cancel this order?\n\nOrder Status: ${currentStatus.toUpperCase()}\n\nNote: Cancelled orders cannot be undone.`,
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setCancellingOrders(prev => new Set(prev).add(orderId));
+              const token = await AsyncStorage.getItem('authorization');
+
+              const response = await axios.post(
+                'https://server.welfarecanteen.in/api/order/cancelOrder',
+                {orderId},
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    authorization: token || '',
+                  },
+                },
+              );
+
+              // Update the order status locally
+              setOrders(prevOrders =>
+                prevOrders.map(order =>
+                  order.id === orderId
+                    ? {...order, status: 'cancelled'}
+                    : order,
+                ),
+              );
+
+              Alert.alert('Success', 'Order cancelled successfully');
+            } catch (error: any) {
+              console.error('Failed to cancel order', error);
+
+              // More detailed error handling
+              let errorMessage = 'Failed to cancel order';
+              if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+
+              Alert.alert('Error', errorMessage);
+            } finally {
+              setCancellingOrders(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(orderId);
+                return newSet;
+              });
+            }
+          },
+        },
+      ],
+    );
   };
 
   const SaveQrToGallery = async () => {
@@ -93,56 +170,116 @@ const ViewOrders: React.FC = () => {
     }
   };
 
-  const renderOrder = ({item}: {item: any}) => (
-    <View style={styles.orderCard}>
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>Order #{item.id}</Text>
-        <Text
-          style={[
-            styles.status,
-            {color: item.status === 'completed' ? '#4CAF50' : '#FF9800'},
-          ]}>
-          {item.status.toUpperCase()}
-        </Text>
-      </View>
-      <Text style={styles.date}>{formatDateTime(item.createdAt)}</Text>
-      <View style={styles.amountRow}>
-        <Text style={styles.amountLabel}>Total:</Text>
-        <Text style={styles.amountValue}>₹{item.totalAmount}</Text>
-      </View>
-      <View style={styles.paymentRow}>
-        <Text style={styles.paymentLabel}>Payment:</Text>
-        <Text style={styles.paymentValue}>
-          {item.payment?.status} via {item.payment?.paymentMethod}
-        </Text>
-      </View>
-      <Text style={styles.itemsTitle}>Items:</Text>
-      <View style={styles.itemsList}>
-        {item.orderItems.map((orderItem: any, index: number) => (
-          <View key={index} style={styles.itemRow}>
-            <Text style={styles.itemName}>{orderItem.menuItemItem.name}</Text>
-            <Text style={styles.itemQty}>× {orderItem.quantity}</Text>
-          </View>
-        ))}
-      </View>
-      {item.qrCode && isRecentOrder(item.createdAt) && (
-        <TouchableOpacity
-          style={styles.qrContainer}
-          activeOpacity={0.8}
-          onPress={SaveQrToGallery}>
-          <ViewShot ref={qrCodeRef} options={{format: 'png', quality: 1}}>
-            <Image
-              source={{uri: item.qrCode}}
-              style={styles.qrImage}
-              resizeMode="contain"
-            />
-          </ViewShot>
-          <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return '#4CAF50';
+      case 'cancelled':
+        return '#F44336';
+      case 'pending':
+        return '#FF9800';
+      case 'confirmed':
+        return '#2196F3';
+      default:
+        return '#FF9800';
+    }
+  };
 
+  const renderOrder = ({item}: {item: any}) => {
+    const isCancelled = item.status.toLowerCase() === 'cancelled';
+
+    // Style for strike-through
+    const strikeThroughStyle = isCancelled
+      ? {textDecorationLine: 'line-through' as 'line-through', color: '#888'}
+      : {};
+
+    return (
+      <View style={styles.orderCard}>
+        <View style={styles.orderHeader}>
+          <Text style={[styles.orderId, strikeThroughStyle]}>
+            Order #{item.id}
+          </Text>
+          <Text style={[styles.status, {color: getStatusColor(item.status)}]}>
+            {item.status.toUpperCase()}
+          </Text>
+        </View>
+        <Text style={[styles.date, strikeThroughStyle]}>
+          {formatDateTime(item.createdAt)}
+        </Text>
+        <View style={styles.amountRow}>
+          <Text style={[styles.amountLabel, strikeThroughStyle]}>Total:</Text>
+          <Text style={[styles.amountValue, strikeThroughStyle]}>
+            ₹{item.totalAmount}
+          </Text>
+        </View>
+        <View style={styles.paymentRow}>
+          <Text style={[styles.paymentLabel, strikeThroughStyle]}>
+            Payment:
+          </Text>
+          <Text style={[styles.paymentValue, strikeThroughStyle]}>
+            {item.payment?.status} via {item.payment?.paymentMethod}
+          </Text>
+        </View>
+        <Text style={[styles.itemsTitle, strikeThroughStyle]}>Items:</Text>
+        <View style={styles.itemsList}>
+          {item.orderItems.map((orderItem: any, index: number) => (
+            <View key={index} style={styles.itemRow}>
+              <Text style={[styles.itemName, strikeThroughStyle]}>
+                {orderItem.menuItemItem.name}
+              </Text>
+              <Text style={[styles.itemQty, strikeThroughStyle]}>
+                × {orderItem.quantity}
+              </Text>
+            </View>
+          ))}
+        </View>
+        /* Cancel Button */ /* Cancel Button */
+        {canCancelOrder(item.status) &&
+          !isCancelled &&
+          item.status.toUpperCase() !== 'CANCELED' && (
+            <TouchableOpacity
+              style={[
+                styles.cancelButton,
+                cancellingOrders.has(item.id) && styles.cancelButtonDisabled,
+              ]}
+              onPress={() => cancelOrder(item.id, item.status)}
+              disabled={cancellingOrders.has(item.id)}>
+              <Text style={styles.cancelButtonText}>
+                {cancellingOrders.has(item.id)
+                  ? 'Cancelling...'
+                  : 'Cancel Order'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        {isCancelled && (
+          <View style={styles.cancelledContainer}>
+            <Text style={styles.cancelledText}>
+              This order has been cancelled
+            </Text>
+          </View>
+        )}
+        {/* QR code only if NOT cancelled and NOT CANCELED */}
+        {item.qrCode &&
+          isRecentOrder(item.createdAt) &&
+          !isCancelled &&
+          item.status.toUpperCase() !== 'CANCELED' && (
+            <TouchableOpacity
+              style={styles.qrContainer}
+              activeOpacity={0.8}
+              onPress={SaveQrToGallery}>
+              <ViewShot ref={qrCodeRef} options={{format: 'png', quality: 1}}>
+                <Image
+                  source={{uri: item.qrCode}}
+                  style={styles.qrImage}
+                  resizeMode="contain"
+                />
+              </ViewShot>
+              <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
+            </TouchableOpacity>
+          )}
+      </View>
+    );
+  };
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -287,6 +424,22 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     color: '#0014A8',
   },
+  cancelButton: {
+    backgroundColor: '#F44336',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  cancelButtonDisabled: {
+    backgroundColor: '#BDBDBD',
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   qrContainer: {
     alignItems: 'center',
     marginVertical: 12,
@@ -376,6 +529,21 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 40,
     fontSize: 16,
+  },
+  cancelledContainer: {
+    backgroundColor: '#FFEBEE',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  cancelledText: {
+    fontSize: 14,
+    color: '#D32F2F',
+    fontWeight: '600',
   },
 });
 

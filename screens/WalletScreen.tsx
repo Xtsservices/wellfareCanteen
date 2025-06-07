@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from './navigationTypes';
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from './navigationTypes';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type WalletScreenNavigationProp = StackNavigationProp<
@@ -13,84 +23,122 @@ interface WalletScreenProps {
   navigation: WalletScreenNavigationProp;
 }
 
-const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
-  const [showAll, setShowAll] = useState(false); // <-- State for toggling history
+interface Transaction {
+  id: number;
+  userId: string;
+  referenceId: string;
+  type: string;
+  amount: number;
+  createdAt: number;
+  updatedAt: number;
+}
 
-  const walletBalance = 200;
-  
-  const history = [
-    { id: '1', amount: 5 },
-    { id: '2', amount: 20 },
-    { id: '3', amount: 5 },
-    { id: '4', amount: 20 },
-    { id: '5', amount: 15 },
-    { id: '6', amount: 10 },
-    { id: '7', amount: 25 },
-  ];
+const WalletScreen: React.FC<WalletScreenProps> = ({navigation}) => {
+  const [showAll, setShowAll] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
-  const barData = [2, 4, 6, 8, 7, 3, 10]; // Example data for Mon-Sun
+  useEffect(() => {
+    console.log('Fetching wallet data...');
+    const fetchWalletData = async () => {
+      const token = await AsyncStorage.getItem('authorization');
+      setLoading(true);
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+          Authorization: token ?? '', // Ensure it's always a string
+        };
 
-  const displayedHistory = showAll ? history : history.slice(0, 4); // Show only first 4 unless showAll
+        const transRes = await fetch(
+          'https://server.welfarecanteen.in/api/order/getWalletTransactions',
+          {headers},
+        );
+        const transJson = await transRes.json();
+
+        const balanceRes = await fetch(
+          'https://server.welfarecanteen.in/api/order/getWalletBalance',
+          {headers},
+        );
+        const balanceJson = await balanceRes.json();
+
+        setTransactions(transJson.data.transactions || []);
+        setWalletBalance(balanceJson.data.walletBalance || 0);
+      } catch (error) {
+        // Handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWalletData();
+  }, []);
+
+  const displayedHistory = showAll ? transactions : transactions.slice(0, 4);
 
   return (
     <View style={styles.container}>
       {/* Top Blue Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={28} color="#fff" />
-        </TouchableOpacity>
-
-        <View style={styles.searchContainer}>
-          <TextInput
-            placeholder="Search..."
-            placeholderTextColor="#999"
-            style={styles.searchInput}
-          />
-          <Icon name="magnify" size={20} color="#666" style={styles.searchIcon} />
-        </View>
+        <Text
+          style={{
+            color: '#fff',
+            fontSize: 20,
+            fontWeight: 'bold',
+            flex: 1,
+            textAlign: 'center',
+          }}>
+          Wallet Amount
+        </Text>
       </View>
 
       {/* Wallet Section */}
       <View style={styles.walletCard}>
         <Text style={styles.walletAmount}>₹ {walletBalance}</Text>
-
-        {/* Bar Chart */}
-        <View style={styles.barChart}>
-          {barData.map((value, index) => (
-            <View key={index} style={styles.barItem}>
-              <View style={[styles.bar, { height: value * 10 }]} />
-              <Text style={styles.barLabel}>
-                {['Mon', 'Tue', 'Web', 'Thu', 'Fri', 'Sat', 'Sun'][index]}
-              </Text>
-            </View>
-          ))}
-        </View>
       </View>
 
       {/* History Section */}
       <ScrollView style={styles.historySection}>
         <View style={styles.historyHeader}>
-          <Text style={styles.historyTitle}>History</Text>
+          <Text style={styles.historyTitle}>Transactions</Text>
           <TouchableOpacity onPress={() => setShowAll(!showAll)}>
-            <Text style={styles.viewAllText}>{showAll ? 'View Less' : 'View All'}</Text>
+            <Text style={styles.viewAllText}>
+              {showAll ? 'View Less' : 'View All'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {displayedHistory.map((item) => (
-          <View key={item.id} style={styles.historyItem}>
-            <View style={styles.historyItemRow}>
-              <Text style={styles.historyLabel}>Amount</Text>
-              <Text style={styles.historyAmount}>₹{item.amount}</Text>
+        {loading ? (
+          <ActivityIndicator size="large" color="#0014A8" />
+        ) : (
+          <View style={styles.table}>
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              <Text style={[styles.tableCell, styles.headerCell]}>Type</Text>
+              <Text style={[styles.tableCell, styles.headerCell]}>Amount</Text>
+              <Text style={[styles.tableCell, styles.headerCell]}>
+                Reference
+              </Text>
+              <Text style={[styles.tableCell, styles.headerCell]}>Date</Text>
             </View>
+            {displayedHistory.map(item => (
+              <View key={item.id} style={styles.tableRow}>
+                <Text style={styles.tableCell}>{item.type}</Text>
+                <Text style={styles.tableCell}>₹{item.amount}</Text>
+                <Text style={styles.tableCell}>{item.referenceId}</Text>
+                <Text style={styles.tableCell}>
+                  {new Date(item.createdAt * 1000).toLocaleDateString()}
+                </Text>
+              </View>
+            ))}
           </View>
-        ))}
+        )}
       </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>proposed by</Text>
         <Image
-          source={{ uri: 'https://watabix.com/assets/logo.png' }} // Replace with correct logo
+          source={{uri: 'https://watabix.com/assets/logo.png'}}
           style={styles.footerLogo}
         />
       </View>
@@ -99,15 +147,17 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: {flex: 1, backgroundColor: '#fff'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#0014A8',
-    paddingTop: 100,
+    paddingTop: 20,
     paddingBottom: 20,
     paddingHorizontal: 10,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -141,27 +191,6 @@ const styles = StyleSheet.create({
     color: '#0014A8',
     marginBottom: 10,
   },
-  barChart: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    width: '100%',
-    marginTop: 20,
-  },
-  barItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  bar: {
-    width: 10,
-    backgroundColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 5,
-  },
-  barLabel: {
-    fontSize: 10,
-    color: '#333',
-  },
   historySection: {
     flex: 1,
     marginHorizontal: 15,
@@ -183,24 +212,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  historyItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
+  table: {
     borderWidth: 1,
     borderColor: '#eee',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  historyItemRow: {
+  tableRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
-  historyLabel: {
-    fontSize: 14,
+  tableHeader: {
+    backgroundColor: '#f5f5f5',
+  },
+  tableCell: {
+    flex: 1,
+    fontSize: 13,
     color: '#333',
+    textAlign: 'center',
   },
-  historyAmount: {
-    fontSize: 14,
+  headerCell: {
     fontWeight: 'bold',
     color: '#0014A8',
   },
