@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,19 +8,24 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  ActivityIndicator
 } from 'react-native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from './navigationTypes';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from './navigationTypes';
 import axios from 'axios';
-import {GetMenuItemsbyCanteenId} from './services/restApi';
+import { GetMenuItemsbyCanteenId } from './services/restApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from './header';
 import DownNavbar from './downNavbar';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
-type DashboardScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'Dashboard',
-  'MenubyMenuId'
->;
+// Note: Ensure react-native-responsive-screen is installed:
+// 1. Run `npm install react-native-responsive-screen`
+// 2. Ensure Header.tsx uses PNGs (wallet.png, profile.png) in src/assets/
+// 3. Rebuild: `npx react-native run-android` or `npx react-native run-ios`
+// 4. If images don't render, verify paths and clear cache: `npx react-native start --reset-cache`
+
+type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 interface DashboardProps {
   navigation: DashboardScreenNavigationProp;
@@ -31,20 +36,17 @@ interface DashboardProps {
   };
 }
 
-const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
+const Dashboard: React.FC<DashboardProps> = ({ navigation, route }) => {
   const [menuData, setMenuData] = useState<any>(null);
-  const [logoLoaded, setLogoLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const {canteenId} = route.params;
+  const { canteenId } = route.params;
+  const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
-    console.log('Canteen ID:', canteenId);
     const fetchMenuData = async () => {
       try {
-        let validCanteenId = canteenId;
-        if (!validCanteenId) {
-          validCanteenId = (await AsyncStorage.getItem('canteenId')) || '';
-        }
+        let validCanteenId = canteenId || (await AsyncStorage.getItem('canteenId')) || '';
         if (!validCanteenId) {
           console.error('No canteenId available');
           return;
@@ -57,28 +59,18 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
           return;
         }
 
-        console.log('Token:', token);
-        console.log('Valid Canteen ID:', validCanteenId);
-
-        const response = await axios.get(
-          GetMenuItemsbyCanteenId(validCanteenId),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              authorization: token,
-            },
+        const response = await axios.get(GetMenuItemsbyCanteenId(validCanteenId), {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
           },
-        );
+        });
 
         setMenuData(response.data.data);
-
-        console.log('Menu data:', response.data.data);
+        setLoading(false);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 500) {
-          Alert.alert(
-            'Error',
-            'Failed to load menu data. Please try again later.',
-          );
+          Alert.alert('Error', 'Failed to load menu data. Please try again later.');
         }
       }
     };
@@ -97,17 +89,15 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
             onPress={async () => {
               const menuItem = menu[category][0];
               if (menuItem) {
-                // Store the selected date in state before navigating
                 setSelectedDate(date);
-                // Store the selected date in AsyncStorage before navigating
                 await AsyncStorage.setItem('selectedDate', date);
                 navigation.navigate('MenubyMenuId', {
                   menuId: menuItem.id,
-                  date: date, // pass date as prop
+                  date,
                 });
-                console.log('Selected date:', date);
               }
-            }}>
+            }}
+          >
             <Image
               source={{
                 uri:
@@ -128,79 +118,36 @@ const Dashboard: React.FC<DashboardProps> = ({navigation, route}) => {
     </View>
   );
 
+    if (loading) {
+      return (
+        <View style={[styles.container, styles.loadingContainer]}>
+          <ActivityIndicator size="large" color="#0014A8" />
+        </View>
+      );
+    }
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: '#0014A8',
-          paddingVertical: 18,
-          paddingHorizontal: 18,
-          borderBottomLeftRadius: 18,
-          borderBottomRightRadius: 18,
-          marginBottom: 10,
-        }}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Image
-            source={{uri: 'https://welfarecanteen.in/public/Naval.jpg'}}
-            style={styles.logo}
-          />
-          <Text style={styles.headerTitle}>Welfare Canteen</Text>
-        </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity
-            style={styles.iconborder}
-            onPress={() => navigation.navigate('WalletScreen')}>
-            <Image
-              source={{
-                uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
-              }}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconborder}
-            onPress={() => navigation.navigate('SettingsScreen')}>
-            <Image
-              source={{
-                uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
-              }}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Search Bar */}
+      <Header text="Dashboard" />
       <View style={styles.searchBar}>
         <Image
-          source={{
-            uri: 'https://img.icons8.com/ios-filled/50/000000/search--v1.png',
-          }}
+          source={{ uri: 'https://img.icons8.com/ios-filled/50/000000/search--v1.png' }}
           style={styles.searchIcon}
         />
         <TextInput placeholder="Search..." style={styles.searchInput} />
         <TouchableOpacity>
           <Image
-            source={{
-              uri: 'https://img.icons8.com/ios-filled/50/000000/microphone.png',
-            }}
+            source={{ uri: 'https://img.icons8.com/ios-filled/50/000000/microphone.png' }}
             style={styles.micIcon}
           />
         </TouchableOpacity>
       </View>
-
-      {/* Menu List */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {menuData &&
-          Object.keys(menuData).map(date => {
-            // Store the key (date) in state if needed
-            // Example: setSelectedDate(date); (define selectedDate state if required)
-            return renderMenuItems(date, menuData[date]);
-          })}
+        {menuData && Object.keys(menuData).length > 0 ? (
+          Object.keys(menuData).map((date) => renderMenuItems(date, menuData[date]))
+        ) : (
+          <Text style={styles.noDataText}>No menu data available.</Text>
+        )}
       </ScrollView>
       <DownNavbar />
     </View>
@@ -211,128 +158,93 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6F8FB',
-    paddingTop: 40,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0014A8',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    marginBottom: 10,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 38,
-    height: 38,
-    marginRight: 10,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  headerIcons: {
-    flexDirection: 'row',
-  },
-  icon: {
-    width: 26,
-    height: 26,
-  },
-  iconborder: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    padding: 7,
-    marginLeft: 10,
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 2,
+    backgroundColor: '#F4F6FB',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginHorizontal: 18,
-    marginBottom: 10,
-    paddingHorizontal: 12,
+    borderRadius: wp('3%'),
+    marginHorizontal: wp('4%'),
+    marginBottom: hp('1%'),
+    marginTop: hp('1%'),
+    paddingHorizontal: wp('3%'),
     elevation: 2,
   },
   searchIcon: {
-    width: 20,
-    height: 20,
+    width: wp('5%'),
+    height: wp('5%'),
     tintColor: '#0014A8',
-    marginRight: 8,
+    marginRight: wp('2%'),
   },
   searchInput: {
     flex: 1,
-    height: 44,
-    fontSize: 16,
+    height: hp('6%'),
+    fontSize: wp('4%'),
     color: '#222',
   },
   micIcon: {
-    width: 22,
-    height: 22,
+    width: wp('5.5%'),
+    height: wp('5.5%'),
     tintColor: '#0014A8',
-    marginLeft: 8,
+    marginLeft: wp('2%'),
   },
   scrollContent: {
-    paddingBottom: 80,
+    paddingBottom: hp('10%'),
   },
   menuSection: {
-    marginHorizontal: 18,
-    marginTop: 18,
-    marginBottom: 8,
+    marginHorizontal: wp('4%'),
+    marginTop: hp('2%'),
+    marginBottom: hp('1%'),
     backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: wp('3.5%'),
+    padding: wp('3.5%'),
     elevation: 2,
   },
   menuDate: {
     color: '#0014A8',
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     fontWeight: 'bold',
-    marginBottom: 10,
-    letterSpacing: 0.5,
+    marginBottom: hp('1%'),
+    letterSpacing: wp('0.1%'),
   },
   menuRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   menuCard: {
-    width: 100,
+    width: wp('25%'),
     alignItems: 'center',
     backgroundColor: '#F6F8FB',
-    borderRadius: 10,
-    padding: 8,
-    marginHorizontal: 4,
+    borderRadius: wp('2.5%'),
+    padding: wp('2%'),
+    marginHorizontal: wp('1%'),
     elevation: 1,
   },
   menuImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-    marginBottom: 8,
+    width: wp('18%'),
+    height: wp('18%'),
+    borderRadius: wp('2%'),
+    marginBottom: hp('1%'),
     backgroundColor: '#eee',
   },
   menuCategory: {
     color: '#0014A8',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: wp('3.5%'),
+    textAlign: 'center',
+  },
+  noDataText: {
+    color: '#aaa',
+    fontSize: wp('4%'),
+    marginTop: hp('7%'),
     textAlign: 'center',
   },
 });
 
 export default Dashboard;
-function setSelectedDate(date: string) {
-  throw new Error('Function not implemented.');
-}

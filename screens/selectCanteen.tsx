@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,21 +6,27 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
-  Dimensions,
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
   Alert,
   BackHandler,
 } from 'react-native';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {AllCanteens} from './services/restApi';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from './navigationTypes';
+import { AllCanteens } from './services/restApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {RootStackParamList} from './navigationTypes';
 import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
-// import LinearGradient from 'react-native-linear-gradient'; // Uncomment if using gradient
+import Header from './header';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
+// Note: Ensure react-native-responsive-screen is installed:
+// 1. Run `npm install react-native-responsive-screen`
+// 2. Rebuild: `npx react-native run-android` or `npx react-native run-ios`
+// 3. Ensure Header.tsx uses PNGs (wallet.png, profile.png) in src/assets/
+// 4. If images don't render, verify paths and clear cache: `npx react-native start --reset-cache`
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'SelectCanteen'>;
 
@@ -29,9 +35,6 @@ type Canteen = {
   canteenName: string;
   canteenImage: string;
 };
-
-const {width} = Dimensions.get('window');
-const CARD_WIDTH = width * 0.44;
 
 const SelectCanteenScreen = () => {
   const [canteens, setCanteens] = useState<Canteen[]>([]);
@@ -47,7 +50,7 @@ const SelectCanteenScreen = () => {
       if (!token) return;
       const state = await NetInfo.fetch();
       const response = await axios.get(AllCanteens(), {
-        headers: {Authorization: token},
+        headers: { Authorization: token },
       });
       if (response.data && response.data.data) {
         setCanteens(
@@ -59,7 +62,7 @@ const SelectCanteenScreen = () => {
         );
       }
     } catch (error) {
-      // fallback or error handling
+      // Fallback or error handling
     } finally {
       setLoading(false);
     }
@@ -78,10 +81,9 @@ const SelectCanteenScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        // Exit app when back is pressed on Dashboard
         Alert.alert('Exit App', 'Are you sure you want to exit?', [
-          {text: 'Cancel', style: 'cancel'},
-          {text: 'Exit', onPress: () => BackHandler.exitApp()},
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Exit', onPress: () => BackHandler.exitApp() },
         ]);
         return true;
       };
@@ -89,7 +91,7 @@ const SelectCanteenScreen = () => {
       const backHandler = BackHandler.addEventListener(
         'hardwareBackPress',
         onBackPress,
-      ); 
+      );
 
       return () => {
         backHandler.remove();
@@ -100,24 +102,25 @@ const SelectCanteenScreen = () => {
   const handleConfirm = () => {
     if (selectedCanteen) {
       const selectedCanteenId = canteens.find(
-        canteen => canteen.canteenName === selectedCanteen,
+        (canteen) => canteen.canteenName === selectedCanteen,
       )?.id;
       if (selectedCanteenId) {
-        navigation.navigate('Dashboard', {canteenId: selectedCanteenId});
+        navigation.navigate('Dashboard', { canteenId: selectedCanteenId });
       }
     }
   };
 
-  const renderCanteenItem = ({item}: {item: Canteen}) => (
+  const renderCanteenItem = ({ item }: { item: Canteen }) => (
     <TouchableOpacity
       style={[
         styles.canteenCard,
         selectedCanteen === item.canteenName && styles.selectedCard,
       ]}
       onPress={() => handleCanteenSelect(item.canteenName)}
-      activeOpacity={0.85}>
+      activeOpacity={0.85}
+    >
       <Image
-        source={{uri: item.canteenImage}}
+        source={{ uri: item.canteenImage }}
         style={styles.canteenImage}
         resizeMode="cover"
       />
@@ -133,18 +136,14 @@ const SelectCanteenScreen = () => {
   );
 
   return (
-    // <LinearGradient colors={['#f5f7fa', '#e3e6f3']} style={styles.gradient}> {/* Uncomment for gradient */}
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f7fa" />
+      <Header text="Welfare Canteen" />
+
       <View style={styles.header}>
-        <Text style={styles.headerTitle}> Select Your Canteen</Text>
+        <Text style={styles.headerTitle}>Select Your Canteen</Text>
         <Text style={styles.headerSubtitle}>Click To Use</Text>
       </View>
-      <TouchableOpacity
-        style={styles.confirmButton}
-        onPress={() => navigation.navigate('SdkHome')}>
-        <Text style={styles.confirmButtonText}>Go to SdkHome</Text>
-      </TouchableOpacity>
 
       {loading ? (
         <View style={styles.loaderContainer}>
@@ -153,7 +152,7 @@ const SelectCanteenScreen = () => {
       ) : (
         <FlatList
           data={canteens}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={renderCanteenItem}
           numColumns={2}
           contentContainerStyle={styles.grid}
@@ -170,7 +169,6 @@ const SelectCanteenScreen = () => {
         </TouchableOpacity>
       )}
     </SafeAreaView>
-    // </LinearGradient> {/* Uncomment for gradient */}
   );
 };
 
@@ -179,87 +177,86 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f7fa',
   },
-  // gradient: { flex: 1 },
   header: {
-    paddingTop: 36,
-    paddingBottom: 18,
+    paddingTop: hp('4%'),
+    paddingBottom: hp('2%'),
     backgroundColor: '#fff',
     alignItems: 'center',
-    borderBottomWidth: 0.5,
+    borderBottomWidth: wp('0.1%'),
     borderBottomColor: '#e0e0e0',
-    marginBottom: 10,
+    marginBottom: hp('1%'),
     elevation: 2,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: wp('5%'),
+    borderBottomRightRadius: wp('5%'),
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: wp('7%'),
     fontWeight: '800',
     color: '#010080',
     fontFamily: 'Poppins',
-    marginBottom: 2,
-    letterSpacing: 0.5,
+    marginBottom: hp('0.2%'),
+    letterSpacing: wp('0.1%'),
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: wp('4%'),
     color: '#555',
     fontFamily: 'Poppins',
-    marginBottom: 2,
+    marginBottom: hp('0.2%'),
   },
   grid: {
-    paddingHorizontal: 10,
-    paddingBottom: 20,
+    paddingHorizontal: wp('2%'),
+    paddingBottom: hp('2%'),
     alignItems: 'center',
   },
   canteenCard: {
     backgroundColor: '#fff',
-    borderRadius: 18,
-    margin: 10,
-    width: CARD_WIDTH,
+    borderRadius: wp('4.5%'),
+    margin: wp('2%'),
+    width: wp('44%'),
     alignItems: 'center',
     elevation: 6,
     shadowColor: '#010080',
     shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: {width: 0, height: 4},
-    paddingVertical: 18,
-    paddingHorizontal: 8,
+    shadowRadius: wp('2.5%'),
+    shadowOffset: { width: 0, height: hp('0.5%') },
+    paddingVertical: hp('2%'),
+    paddingHorizontal: wp('2%'),
     position: 'relative',
-    borderWidth: 1,
+    borderWidth: wp('0.2%'),
     borderColor: '#e3e6f3',
   },
   selectedCard: {
-    borderWidth: 2,
+    borderWidth: wp('0.4%'),
     borderColor: '#010080',
     shadowOpacity: 0.18,
     shadowColor: '#010080',
     backgroundColor: '#f0f4ff',
   },
   canteenImage: {
-    width: CARD_WIDTH - 28,
-    height: CARD_WIDTH - 28,
-    borderRadius: 14,
-    marginBottom: 12,
+    width: wp('36%'),
+    height: wp('36%'),
+    borderRadius: wp('3.5%'),
+    marginBottom: hp('1.5%'),
     backgroundColor: '#e0e0e0',
   },
   canteenName: {
     color: '#010080',
     fontWeight: '700',
-    fontSize: 17,
+    fontSize: wp('4.2%'),
     textAlign: 'center',
     fontFamily: 'Poppins',
-    marginBottom: 2,
-    minHeight: 40,
-    letterSpacing: 0.2,
+    marginBottom: hp('0.2%'),
+    minHeight: hp('5%'),
+    letterSpacing: wp('0.05%'),
   },
   checkCircle: {
     position: 'absolute',
-    top: 14,
-    right: 14,
+    top: hp('1.5%'),
+    right: wp('3%'),
     backgroundColor: '#010080',
-    borderRadius: 14,
-    width: 28,
-    height: 28,
+    borderRadius: wp('7%'),
+    width: wp('7%'),
+    height: wp('7%'),
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
@@ -267,34 +264,34 @@ const styles = StyleSheet.create({
   checkMark: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: wp('4.5%'),
   },
   confirmButton: {
     backgroundColor: '#010080',
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: hp('2%'),
+    borderRadius: wp('4%'),
     alignSelf: 'center',
-    width: '90%',
-    marginBottom: 30,
-    marginTop: 10,
+    width: wp('90%'),
+    marginBottom: hp('3%'),
+    marginTop: hp('1%'),
     elevation: 4,
     shadowColor: '#010080',
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: {width: 0, height: 2},
+    shadowRadius: wp('2%'),
+    shadowOffset: { width: 0, height: hp('0.2%') },
   },
   confirmButtonText: {
     color: '#fff',
-    fontSize: 19,
+    fontSize: wp('4.8%'),
     fontWeight: '800',
     textAlign: 'center',
-    letterSpacing: 1,
+    letterSpacing: wp('0.2%'),
     fontFamily: 'Poppins',
   },
   emptyText: {
     color: '#aaa',
-    fontSize: 16,
-    marginTop: 60,
+    fontSize: wp('4%'),
+    marginTop: hp('7%'),
     textAlign: 'center',
   },
   loaderContainer: {
