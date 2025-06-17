@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,29 @@ import {
   Alert,
   PermissionsAndroid,
   Platform,
+  ActivityIndicator
 } from 'react-native';
 import DownNavbar from './downNavbar';
+import Header from './header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {CameraRoll} from '@react-native-camera-roll/camera-roll';
-import ViewShot, {captureRef} from 'react-native-view-shot';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import ViewShot, { captureRef } from 'react-native-view-shot';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
+// Note: Ensure required dependencies are installed:
+// 1. Run `npm install react-native-responsive-screen react-native-view-shot @react-native-camera-roll/camera-roll axios @react-native-async-storage/async-storage`
+// 2. Ensure Header.tsx uses PNGs (wallet.png, profile.png) in src/assets/ with correct paths
+// 3. For iOS, add to Podfile: pod 'RNCameraRoll', :path => '../node_modules/@react-native-camera-roll/camera-roll'
+// 4. Run `cd ios && pod install`
+// 5. Rebuild: `npx react-native run-android` or `npx react-native run-ios`
+// 6. If images don't render, verify paths and clear cache: `npx react-native start --reset-cache`
 
 const ViewOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
-  const [cancellingOrders, setCancellingOrders] = useState<Set<number>>(
-    new Set(),
-  );
+  const [cancellingOrders, setCancellingOrders] = useState<Set<number>>(new Set());
   const qrCodeRef = useRef<ViewShot>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -37,6 +47,7 @@ const ViewOrders: React.FC = () => {
           },
         );
         setOrders(response.data.data || []);
+        setLoading(false);
       } catch (error: any) {
         console.error('Failed to fetch orders', error);
       }
@@ -57,12 +68,10 @@ const ViewOrders: React.FC = () => {
   };
 
   const canCancelOrder = (status: string) => {
-    // Allow cancellation for all statuses except already cancelled
     return status.toLowerCase() !== 'cancelled';
   };
 
   const cancelOrder = async (orderId: number, currentStatus: string) => {
-    // Additional check for already cancelled orders
     if (currentStatus.toLowerCase() === 'cancelled') {
       Alert.alert('Info', 'This order has already been cancelled.');
       return;
@@ -86,7 +95,7 @@ const ViewOrders: React.FC = () => {
 
               const response = await axios.post(
                 'https://server.welfarecanteen.in/api/order/cancelOrder',
-                {orderId},
+                { orderId },
                 {
                   headers: {
                     'Content-Type': 'application/json',
@@ -95,27 +104,20 @@ const ViewOrders: React.FC = () => {
                 },
               );
 
-              // Update the order status locally
               setOrders(prevOrders =>
                 prevOrders.map(order =>
-                  order.id === orderId
-                    ? {...order, status: 'cancelled'}
-                    : order,
+                  order.id === orderId ? { ...order, status: 'cancelled' } : order,
                 ),
               );
 
               Alert.alert('Success', 'Order cancelled successfully');
             } catch (error: any) {
-              console.error('Failed to cancel order', error);
-
-              // More detailed error handling
               let errorMessage = 'Failed to cancel order';
               if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
               } else if (error.message) {
                 errorMessage = error.message;
               }
-
               Alert.alert('Error', errorMessage);
             } finally {
               setCancellingOrders(prev => {
@@ -147,17 +149,14 @@ const ViewOrders: React.FC = () => {
           buttonPositive: 'OK',
         });
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert(
-            'Permission denied',
-            'Cannot save QR code without permission',
-          );
+          Alert.alert('Permission denied', 'Cannot save QR code without permission');
           return;
         }
       }
       if (qrCodeRef.current) {
         const uri = await qrCodeRef.current.capture?.();
         if (uri) {
-          await CameraRoll.save(uri, {type: 'photo'});
+          await CameraRoll.save(uri, { type: 'photo' });
           Alert.alert('Success', 'QR code saved to gallery!');
         } else {
           Alert.alert('Error', 'Failed to capture QR code');
@@ -185,21 +184,17 @@ const ViewOrders: React.FC = () => {
     }
   };
 
-  const renderOrder = ({item}: {item: any}) => {
+  const renderOrder = ({ item }: { item: any }) => {
     const isCancelled = item.status.toLowerCase() === 'cancelled';
-
-    // Style for strike-through
     const strikeThroughStyle = isCancelled
-      ? {textDecorationLine: 'line-through' as 'line-through', color: '#888'}
+      ? { textDecorationLine: 'line-through' as 'line-through', color: '#888' }
       : {};
 
     return (
       <View style={styles.orderCard}>
         <View style={styles.orderHeader}>
-          <Text style={[styles.orderId, strikeThroughStyle]}>
-            Order #{item.id}
-          </Text>
-          <Text style={[styles.status, {color: getStatusColor(item.status)}]}>
+          <Text style={[styles.orderId, strikeThroughStyle]}>Order #{item.id}</Text>
+          <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
             {item.status.toUpperCase()}
           </Text>
         </View>
@@ -208,14 +203,10 @@ const ViewOrders: React.FC = () => {
         </Text>
         <View style={styles.amountRow}>
           <Text style={[styles.amountLabel, strikeThroughStyle]}>Total:</Text>
-          <Text style={[styles.amountValue, strikeThroughStyle]}>
-            ₹{item.totalAmount}
-          </Text>
+          <Text style={[styles.amountValue, strikeThroughStyle]}>₹{item.totalAmount}</Text>
         </View>
         <View style={styles.paymentRow}>
-          <Text style={[styles.paymentLabel, strikeThroughStyle]}>
-            Payment:
-          </Text>
+          <Text style={[styles.paymentLabel, strikeThroughStyle]}>Payment:</Text>
           <Text style={[styles.paymentValue, strikeThroughStyle]}>
             {item.payment?.status} via {item.payment?.paymentMethod}
           </Text>
@@ -227,105 +218,56 @@ const ViewOrders: React.FC = () => {
               <Text style={[styles.itemName, strikeThroughStyle]}>
                 {orderItem.menuItemItem.name}
               </Text>
-              <Text style={[styles.itemQty, strikeThroughStyle]}>
-                × {orderItem.quantity}
-              </Text>
+              <Text style={[styles.itemQty, strikeThroughStyle]}>× {orderItem.quantity}</Text>
             </View>
           ))}
         </View>
-        /* Cancel Button */ /* Cancel Button */
-        {canCancelOrder(item.status) &&
-          !isCancelled &&
-          item.status.toUpperCase() !== 'CANCELED' && (
-            <TouchableOpacity
-              style={[
-                styles.cancelButton,
-                cancellingOrders.has(item.id) && styles.cancelButtonDisabled,
-              ]}
-              onPress={() => cancelOrder(item.id, item.status)}
-              disabled={cancellingOrders.has(item.id)}>
-              <Text style={styles.cancelButtonText}>
-                {cancellingOrders.has(item.id)
-                  ? 'Cancelling...'
-                  : 'Cancel Order'}
-              </Text>
-            </TouchableOpacity>
-          )}
+        {canCancelOrder(item.status) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && (
+          <TouchableOpacity
+            style={[styles.cancelButton, cancellingOrders.has(item.id) && styles.cancelButtonDisabled]}
+            onPress={() => cancelOrder(item.id, item.status)}
+            disabled={cancellingOrders.has(item.id)}
+          >
+            <Text style={styles.cancelButtonText}>
+              {cancellingOrders.has(item.id) ? 'Cancelling...' : 'Cancel Order'}
+            </Text>
+          </TouchableOpacity>
+        )}
         {isCancelled && (
           <View style={styles.cancelledContainer}>
-            <Text style={styles.cancelledText}>
-              This order has been cancelled
-            </Text>
+            <Text style={styles.cancelledText}>This order has been cancelled</Text>
           </View>
         )}
-        {/* QR code only if NOT cancelled and NOT CANCELED */}
-        {item.qrCode &&
-          isRecentOrder(item.createdAt) &&
-          !isCancelled &&
-          item.status.toUpperCase() !== 'CANCELED' && (
-            <TouchableOpacity
-              style={styles.qrContainer}
-              activeOpacity={0.8}
-              onPress={SaveQrToGallery}>
-              <ViewShot ref={qrCodeRef} options={{format: 'png', quality: 1}}>
-                <Image
-                  source={{uri: item.qrCode}}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
-              </ViewShot>
-              <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
-            </TouchableOpacity>
-          )}
+        {item.qrCode && isRecentOrder(item.createdAt) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && (
+          <TouchableOpacity style={styles.qrContainer} activeOpacity={0.8} onPress={SaveQrToGallery}>
+            <ViewShot ref={qrCodeRef} options={{ format: 'png', quality: 1 }}>
+              <Image source={{ uri: item.qrCode }} style={styles.qrImage} resizeMode="contain" />
+            </ViewShot>
+            <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
+
+   if (loading) {
+        return (
+          <View style={[styles.container, styles.loadingContainer]}>
+            <ActivityIndicator size="large" color="#0014A8" />
+          </View>
+        );
+      }
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Image
-          source={{
-            uri: 'https://welfarecanteen.in/public/Naval.jpg',
-          }}
-          style={styles.logo}
-        />
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconborder}>
-            <Image
-              source={{
-                uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
-              }}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconborder}>
-            <Image
-              source={{
-                uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
-              }}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.header1}>
-        <Text style={styles.headerTitle1}>Orders History</Text>
-      </View>
-
-      {/* Orders List */}
+      <Header text="Orders History" />
       <FlatList
         data={orders}
         keyExtractor={item => item.id.toString()}
         renderItem={renderOrder}
         contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No orders found.</Text>
-        }
+        ListEmptyComponent={<Text style={styles.emptyText}>No orders found.</Text>}
       />
-
-      {/* Bottom Navbar */}
       <DownNavbar style={styles.stckyNavbar} />
     </View>
   );
@@ -335,47 +277,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F3F6FB',
-    marginTop: 0,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F4F6FB',
   },
   listContainer: {
-    padding: 16,
-    paddingBottom: 90,
+    padding: wp('4%'),
+    paddingBottom: hp('12%'),
   },
   orderCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 18,
+    borderRadius: wp('4%'),
+    padding: wp('4.5%'),
+    marginBottom: hp('2%'),
     shadowColor: '#000',
     shadowOpacity: 0.07,
-    shadowRadius: 8,
-    shadowOffset: {width: 0, height: 2},
+    shadowRadius: wp('2%'),
+    shadowOffset: { width: 0, height: hp('0.2%') },
     elevation: 3,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: hp('0.8%'),
   },
   orderId: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontWeight: 'bold',
     color: '#0014A8',
   },
   status: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontWeight: 'bold',
   },
   date: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     color: '#888',
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   amountRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    marginBottom: hp('0.2%'),
   },
   amountLabel: {
     fontWeight: 'bold',
@@ -388,7 +335,7 @@ const styles = StyleSheet.create({
   paymentRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   paymentLabel: {
     color: '#555',
@@ -398,17 +345,17 @@ const styles = StyleSheet.create({
   },
   itemsTitle: {
     fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 2,
+    marginTop: hp('1%'),
+    marginBottom: hp('0.2%'),
     color: '#0014A8',
   },
   itemsList: {
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    marginBottom: hp('0.2%'),
   },
   itemName: {
     flex: 2,
@@ -419,97 +366,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#555',
   },
-  itemTotal: {
-    flex: 1,
-    textAlign: 'right',
-    color: '#0014A8',
-  },
   cancelButton: {
     backgroundColor: '#F44336',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: hp('1.2%'),
+    borderRadius: wp('2%'),
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: hp('1%'),
+    marginBottom: hp('1%'),
   },
   cancelButtonDisabled: {
     backgroundColor: '#BDBDBD',
   },
   cancelButtonText: {
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     color: '#fff',
     fontWeight: 'bold',
   },
   qrContainer: {
     alignItems: 'center',
-    marginVertical: 12,
+    marginVertical: hp('1.5%'),
   },
   qrImage: {
-    width: 180,
-    height: 180,
-    borderRadius: 12,
-    borderWidth: 1,
+    width: wp('45%'),
+    height: wp('45%'),
+    borderRadius: wp('3%'),
+    borderWidth: wp('0.2%'),
     borderColor: '#e0e0e0',
     backgroundColor: '#fff',
   },
   qrDownloadText: {
-    marginTop: 6,
+    marginTop: hp('0.8%'),
     color: '#0014A8',
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: wp('3.2%'),
   },
-  reorderButton: {
-    backgroundColor: '#0014A8',
-    paddingVertical: 10,
-    borderRadius: 8,
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    marginTop: hp('5%'),
+    fontSize: wp('4%'),
+  },
+  cancelledContainer: {
+    backgroundColor: '#FFEBEE',
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp('3%'),
+    borderRadius: wp('2%'),
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
+    borderWidth: wp('0.2%'),
+    borderColor: '#FFCDD2',
   },
-  reorderText: {
-    fontSize: 15,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#0014A8',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#fff',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-  },
-  icon: {
-    width: 28,
-    height: 28,
-  },
-  iconborder: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    padding: 7,
-    marginLeft: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header1: {
-    backgroundColor: 'white',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle1: {
-    color: '#0014A8',
-    fontSize: 20,
-    fontWeight: 'bold',
+  cancelledText: {
+    fontSize: wp('3.5%'),
+    color: '#D32F2F',
+    fontWeight: '600',
   },
   stckyNavbar: {
     position: 'absolute',
@@ -517,33 +427,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    borderTopWidth: 1,
+    borderTopWidth: wp('0.2%'),
     borderTopColor: '#ccc',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-    fontSize: 16,
-  },
-  cancelledContainer: {
-    backgroundColor: '#FFEBEE',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#FFCDD2',
-  },
-  cancelledText: {
-    fontSize: 14,
-    color: '#D32F2F',
-    fontWeight: '600',
   },
 });
 

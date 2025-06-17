@@ -1,161 +1,265 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import DownNavbar from './downNavbar';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {uricart1} from './imageUris/uris';
-import {CartData, CartItem} from './types/cartTypes';
+import axios from 'axios';
+import Header from './header';
+import DownNavbar from './downNavbar';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { CartData, CartItem } from './types/cartTypes';
 import {
   fetchCartData,
   updateCartItemQuantity,
   removeCartItem,
   clearCart as clearCartHelper,
 } from './services/cartHelpers';
-import {StackNavigationProp} from '@react-navigation/stack';
-import axios from 'axios';
+
+// Constants
+const API_BASE_URL = 'https://server.welfarecanteen.in/api';
+const COLORS = {
+  PRIMARY: '#0014A8',
+  ERROR: '#ff4d4d',
+  TEXT_SECONDARY: '#666',
+  TEXT_DARK: '#222',
+  TEXT_LIGHT: '#888',
+  BACKGROUND: '#F4F6FB',
+  CARD: '#fff',
+  CLEAR_BUTTON: '#ffeded',
+  BORDER: '#e6eaf2',
+};
+
+// Type Definitions
+type NavigationProp = {
+  navigate: (screen: string) => void;
+  goBack: () => void;
+};
+
+// Cart Item Component
+const CartItemComponent = memo(({ item, onUpdateQuantity, onRemove, updatingItems }: {
+  item: CartItem;
+  onUpdateQuantity: (newQuantity: number) => void;
+  onRemove: () => void;
+  updatingItems: number[];
+}) => (
+  <View style={styles.cartItemCard}>
+    <Image
+      source={{
+        uri: item.item.image
+          ? `data:image/png;base64,${item.item.image}`
+          : 'https://via.placeholder.com/80',
+      }}
+      style={styles.itemImage}
+    />
+    <View style={styles.itemInfo}>
+      <View style={styles.itemHeader}>
+        <Text style={styles.itemName} numberOfLines={2}>
+          {item.item.name}
+        </Text>
+        <TouchableOpacity
+          onPress={onRemove}
+          style={styles.removeIconButton}
+          hitSlop={{ top: wp('2%'), bottom: wp('2%'), left: wp('2%'), right: wp('2%') }}
+        >
+          <Text style={styles.removeIconText}>✕</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.typeRow}>
+        <Image
+          source={{
+            uri: item.item.type?.toLowerCase() === 'veg'
+              ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
+              : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
+          }}
+          style={styles.typeIcon}
+        />
+        <Text style={styles.typeText}>{item.item.type?.toUpperCase() || 'N/A'}</Text>
+      </View>
+      <View style={styles.priceRow}>
+        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+        <Text style={styles.itemTotal}>Total: ₹{item.total.toFixed(2)}</Text>
+      </View>
+      <View style={styles.quantityRow}>
+        {updatingItems.includes(item.id) ? (
+          <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+        ) : (
+          <>
+            <TouchableOpacity
+              style={[styles.qtyBtn, { opacity: item.quantity === 1 ? 0.5 : 1 }]}
+              onPress={() => item.quantity > 1 && onUpdateQuantity(item.quantity - 1)}
+              disabled={item.quantity === 1}
+            >
+              <Text style={styles.qtyBtnText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.quantity}>{item.quantity}</Text>
+            <TouchableOpacity
+              style={styles.qtyBtn}
+              onPress={() => onUpdateQuantity(item.quantity + 1)}
+            >
+              <Text style={styles.qtyBtnText}>+</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    </View>
+  </View>
+));
+
+// Bill Summary Component
+const BillSummary = memo(({ subtotal, totalAmount, onPay, onClear }: {
+  subtotal: number;
+  totalAmount: number;
+  onPay: () => void;
+  onClear: () => void;
+}) => (
+  <View style={styles.billCard}>
+    <View style={styles.billRow}>
+      <Text style={styles.billLabel}>Subtotal</Text>
+      <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+    </View>
+    <View style={[styles.billRow, styles.billTotalRow]}>
+      <Text style={styles.billTotalLabel}>Total</Text>
+      <Text style={styles.billTotalValue}>₹{totalAmount.toFixed(2)}</Text>
+    </View>
+    <TouchableOpacity style={styles.payBtn} onPress={onPay}>
+      <Text style={styles.payBtnText}>Proceed to Payment</Text>
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.clearCartBtn} onPress={onClear}>
+      <Text style={styles.clearCartBtnText}>Clear Cart</Text>
+    </TouchableOpacity>
+  </View>
+));
+
+// Empty Cart Component
+const EmptyCart = memo(({ onContinueShopping }: { onContinueShopping: () => void }) => (
+  <View style={styles.emptyCartContainer}>
+    <Image
+      source={{ uri: 'https://img.icons8.com/ios/100/000000/empty-cart.png' }}
+      style={styles.emptyCartIcon}
+    />
+    <Text style={styles.emptyCartText}>Your cart is empty</Text>
+    <TouchableOpacity
+      style={styles.continueShoppingButton}
+      onPress={onContinueShopping}
+    >
+      <Text style={styles.continueShoppingText}>Continue Shopping</Text>
+    </TouchableOpacity>
+  </View>
+));
 
 const CartPage = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingItems, setUpdatingItems] = useState<number[]>([]);
 
-  const loadCartData = async () => {
+  const loadCartData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await fetchCartData();
-      console.log('Fetched cart data:', data);
       setCartData(data);
     } catch (err) {
-      // setError('Failed to fetch cart data');
-      // console.error('Error fetching cart data:', err);
+      setError('Failed to fetch cart data');
+      console.error('Error fetching cart data:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadCartData();
-  }, [updatingItems]);
+  }, [loadCartData, updatingItems]);
 
-  const updateItemQuantity = async (
-    cartItem: CartItem,
-    newQuantity: number,
-  ) => {
-    console.log('Updating item quantity:', cartItem, newQuantity);
-
+  const updateItemQuantity = useCallback(async (cartItem: CartItem, newQuantity: number) => {
     try {
-      // Add item ID to updating state
       setUpdatingItems(prev => [...prev, cartItem.id]);
       const body = {
         cartItemId: cartItem.item?.id,
         quantity: newQuantity,
         cartId: cartData?.id,
       };
-
-      console.log('Request body:', body);
       const token = await AsyncStorage.getItem('authorization');
-      const API_BASE_URL = 'https://server.welfarecanteen.in/api';
       await axios.post(`${API_BASE_URL}/cart/updateCartItem`, body, {
         headers: {
           'Content-Type': 'application/json',
-          authorization: token,
+          authorization: token || '',
         },
       });
-
       await loadCartData();
     } catch (err) {
       setError('Failed to update cart item');
       console.error('Error updating cart item:', err);
     } finally {
-      // Remove item ID from updating state
       setUpdatingItems(prev => prev.filter(id => id !== cartItem.id));
     }
-  };
+  }, [cartData?.id, loadCartData]);
 
-  const handleRemoveItem = async (item: any) => {
-    console.log(item, 'itemmm');
-
+  const handleRemoveItem = useCallback(async (item: CartItem) => {
     try {
       if (!cartData) return;
-
-      setUpdatingItems(prev => [...prev, item?.item?.id]);
-      const body = {
-        cartId: cartData?.id,
-        cartItemId: item?.item?.id,
-      };
-      console.log('Request body:', body);
-
-      await removeCartItem(item?.cartId, item?.item?.id);
-
-      // Refresh cart data
+      setUpdatingItems(prev => [...prev, Number(item.item?.id)]);
+      await removeCartItem(Number(item.cartId), Number(item.item?.id));
       await loadCartData();
     } catch (err) {
       setError('Failed to remove cart item');
       console.error('Error removing cart item:', err);
     } finally {
-      setUpdatingItems(prev => prev.filter(id => id !== item?.item?.id));
+      setUpdatingItems(prev => prev.filter(id => id !== item.item?.id));
     }
-  };
+  }, [cartData, loadCartData]);
 
-  const handleClearCart = async () => {
+  const handleClearCart = useCallback(async () => {
     try {
       setLoading(true);
       await clearCartHelper();
-      setCartData({} as CartData);
+      setCartData({ id: 0, cartItems: [], totalAmount: 0, menuConfiguration: { name: '' } });
     } catch (err) {
       setError('Failed to clear cart');
       console.error('Error clearing cart:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const confirmClearCart = () => {
+  const confirmClearCart = useCallback(() => {
     Alert.alert(
       'Clear Cart',
       'Are you sure you want to clear your cart?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Clear',
-          onPress: handleClearCart,
-          style: 'destructive',
-        },
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear', onPress: handleClearCart, style: 'destructive' },
       ],
-      {cancelable: true},
+      { cancelable: true },
     );
-  };
+  }, [handleClearCart]);
 
-  const handlePayment = () => {
-    navigation.navigate('PaymentMethod' as never);
-  };
+  const handlePayment = useCallback(() => {
+    navigation.navigate('PaymentMethod');
+  }, [navigation]);
 
-  const calculateGSTAndCharges = (subtotal: number) => {
-    return subtotal * 0.0; // 7% GST
-  };
-
-  const calculatePlatformFee = () => {
-    return 0; // Fixed platform fee
-  };
+  const calculateTotal = useCallback(() => {
+    if (!cartData?.cartItems?.length) return { subtotal: 0, totalAmount: 0 };
+    const subtotal = cartData.cartItems.reduce((sum, item) => sum + item.total, 0);
+    const gstAndCharges = subtotal * 0.0; // 0% GST
+    const platformFee = 0; // Fixed platform fee
+    const totalAmount = subtotal + gstAndCharges + platformFee;
+    return { subtotal, totalAmount };
+  }, [cartData]);
 
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#0014A8" />
+        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        <DownNavbar />
       </View>
     );
   }
@@ -167,331 +271,139 @@ const CartPage = () => {
         <TouchableOpacity style={styles.refreshButton} onPress={loadCartData}>
           <Text style={styles.refreshButtonText}>Try Again</Text>
         </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (!cartData || !cartData.cartItems || cartData.cartItems.length === 0) {
-    return (
-      <View style={[styles.container, styles.emptyCartContainer]}>
-        <Image
-          source={{
-            uri: 'https://img.icons8.com/ios/100/000000/empty-cart.png',
-          }}
-          style={styles.emptyCartIcon}
-        />
-        <Text style={styles.emptyCartText}>Your cart is empty</Text>
-        <TouchableOpacity
-          style={styles.continueShoppingButton}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.continueShoppingText}>Continue Shopping</Text>
-        </TouchableOpacity>
-
         <DownNavbar />
       </View>
     );
   }
 
-  const subtotal = cartData.cartItems.reduce(
-    (sum, item) => sum + item.total,
-    0,
-  );
-  const gstAndCharges = calculateGSTAndCharges(subtotal);
-  const platformFee = calculatePlatformFee();
-  const totalAmount = subtotal + gstAndCharges + platformFee;
+  const { subtotal, totalAmount } = calculateTotal();
 
   return (
     <View style={styles.container}>
-      {/* Custom Header */}
-      <View style={styles.headerContainer}>
-        <Image
-          source={{
-            uri: 'https://welfarecanteen.in/public/Naval.jpg',
-          }}
-          style={styles.logo}
-        />
-        <Text style={styles.headerTitle}>My Cart</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Image
-              source={{
-                uri: 'https://creazilla-store.fra1.digitaloceanspaces.com/icons/3235242/wallet-icon-sm.png',
-              }}
-              style={styles.headerIcon}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Image
-              source={{
-                uri: 'https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw.png',
-              }}
-              style={styles.headerIcon}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Cart Items */}
-      <ScrollView style={styles.cartItems}>
-        {cartData?.cartItems?.map(item => (
-          <View key={item.id} style={styles.cartItemCard}>
-            <Image
-              source={{
-                uri: item.item.image
-                  ? `data:image/png;base64,${item.item.image}`
-                  : 'https://via.placeholder.com/80',
-              }}
-              style={styles.itemImage}
-            />
-            <View style={styles.itemInfo}>
-              {/* Name & Remove Button Row */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}>
-                <Text style={styles.itemName} numberOfLines={2}>
-                  {item.item.name}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => handleRemoveItem(item)}
-                  style={styles.removeIconButton}
-                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-                  <Text style={styles.removeIconText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-              {/* Type Row */}
-              <View style={styles.typeRow}>
-                <Image
-                  source={{
-                    uri:
-                      item.item.type && item.item.type.toLowerCase() === 'veg'
-                        ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
-                        : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
-                  }}
-                  style={styles.typeIcon}
-                />
-                <Text style={styles.typeText}>
-                  {item.item.type ? item.item.type.toUpperCase() : 'N/A'}
-                </Text>
-              </View>
-              {/* Price & Total Row */}
-              <View style={styles.priceRow}>
-                <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
-                <Text style={styles.itemTotal}>
-                  Total: ₹{item.total.toFixed(2)}
-                </Text>
-              </View>
-              {/* Quantity Row */}
-              <View style={styles.quantityRow}>
-                {updatingItems.includes(item.id) ? (
-                  <ActivityIndicator size="small" color="#0014A8" />
-                ) : (
-                  <>
-                    <TouchableOpacity
-                      style={[
-                        styles.qtyBtn,
-                        {opacity: item.quantity === 1 ? 0.5 : 1},
-                      ]}
-                      onPress={() =>
-                        item.quantity > 1 &&
-                        updateItemQuantity(item, item.quantity - 1)
-                      }
-                      disabled={item.quantity === 1}>
-                      <Text style={styles.qtyBtnText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.quantity}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      style={styles.qtyBtn}
-                      onPress={() =>
-                        updateItemQuantity(item, item.quantity + 1)
-                      }>
-                      <Text style={styles.qtyBtnText}>+</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Bill Summary */}
-      <View style={styles.billCard}>
-        <View style={styles.billRow}>
-          <Text style={styles.billLabel}>Subtotal</Text>
-          <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
-        </View>
-        {/* <View style={styles.billRow}>
-          <Text style={styles.billLabel}>GST & Charges</Text>
-          <Text style={styles.billValue}>₹{gstAndCharges.toFixed(2)}</Text>
-        </View>
-        <View style={styles.billRow}>
-          <Text style={styles.billLabel}>Platform Fee</Text>
-          <Text style={styles.billValue}>₹{platformFee.toFixed(2)}</Text>
-        </View> */}
-        <View style={[styles.billRow, styles.billTotalRow]}>
-          <Text style={styles.billTotalLabel}>Total</Text>
-          <Text style={styles.billTotalValue}>₹{totalAmount.toFixed(2)}</Text>
-        </View>
-        <TouchableOpacity style={styles.payBtn} onPress={handlePayment}>
-          <Text style={styles.payBtnText}>Proceed to Payment</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.clearCartBtn}
-          onPress={confirmClearCart}>
-          <Text style={styles.clearCartBtnText}>Clear Cart</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bottom Navigation */}
+      <Header text="My Cart" />
+      {cartData?.cartItems?.length ? (
+        <>
+          <ScrollView style={styles.cartItems}>
+            {cartData.cartItems.map(item => (
+              <CartItemComponent
+                key={item.id}
+                item={item}
+                onUpdateQuantity={(newQuantity) => updateItemQuantity(item, newQuantity)}
+                onRemove={() => handleRemoveItem(item)}
+                updatingItems={updatingItems}
+              />
+            ))}
+          </ScrollView>
+          <BillSummary
+            subtotal={subtotal}
+            totalAmount={totalAmount}
+            onPay={handlePayment}
+            onClear={confirmClearCart}
+          />
+        </>
+      ) : (
+        <EmptyCart onContinueShopping={() => navigation.goBack()} />
+      )}
       <DownNavbar />
     </View>
   );
 };
 
-// --- Improved Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F6FB',
+    backgroundColor: COLORS.BACKGROUND,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F4F6FB',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff0f0',
-    paddingHorizontal: 24,
+    paddingHorizontal: wp('6%'),
   },
   errorText: {
-    color: '#ff4d4d',
-    fontSize: 16,
+    color: COLORS.ERROR,
+    fontSize: wp('4%'),
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: hp('2%'),
     textAlign: 'center',
   },
   refreshButton: {
-    backgroundColor: '#0014A8',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: wp('2%'),
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('6%'),
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: hp('0.5%'),
   },
   refreshButtonText: {
-    color: '#fff',
-    fontSize: 15,
+    color: COLORS.CARD,
+    fontSize: wp('3.8%'),
     fontWeight: 'bold',
   },
   emptyCartContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F4F6FB',
-    paddingHorizontal: 24,
+    paddingHorizontal: wp('6%'),
   },
   emptyCartIcon: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
-    tintColor: '#b0b0b0',
+    width: wp('20%'),
+    height: wp('20%'),
+    marginBottom: hp('2%'),
+    tintColor: COLORS.TEXT_LIGHT,
   },
   emptyCartText: {
-    fontSize: 18,
-    color: '#888',
+    fontSize: wp('4.5%'),
+    color: COLORS.TEXT_LIGHT,
     fontWeight: 'bold',
-    marginBottom: 18,
+    marginBottom: hp('2%'),
     textAlign: 'center',
   },
   continueShoppingButton: {
-    backgroundColor: '#0014A8',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: wp('2%'),
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('6%'),
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: hp('3%'),
   },
   continueShoppingText: {
-    color: '#fff',
-    fontSize: 15,
+    color: COLORS.CARD,
+    fontSize: wp('3.8%'),
     fontWeight: 'bold',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0014A8',
-    paddingTop: 40,
-    paddingBottom: 16,
-    paddingHorizontal: 18,
-    justifyContent: 'space-between',
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    elevation: 4,
-  },
-  logo: {
-    width: 38,
-    height: 38,
-    resizeMode: 'contain',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    marginLeft: 10,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 5,
-    elevation: 2,
-  },
-  headerIcon: {
-    width: 26,
-    height: 26,
-    resizeMode: 'contain',
   },
   cartItems: {
     flex: 1,
-    paddingHorizontal: 10,
-    marginTop: 10,
+    paddingHorizontal: wp('2.5%'),
+    marginTop: hp('1%'),
   },
   cartItemCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 14,
-    padding: 12,
+    backgroundColor: COLORS.CARD,
+    borderRadius: wp('3%'),
+    marginBottom: hp('1.8%'),
+    padding: wp('3%'),
     elevation: 2,
-    shadowColor: '#0014A8',
-    shadowOffset: {width: 0, height: 2},
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: hp('0.2%') },
     shadowOpacity: 0.07,
-    shadowRadius: 4,
+    shadowRadius: wp('1%'),
   },
   itemImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 10,
-    backgroundColor: '#e6eaf2',
+    width: wp('18%'),
+    height: wp('18%'),
+    borderRadius: wp('2.5%'),
+    backgroundColor: COLORS.BORDER,
   },
   itemInfo: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: wp('3.5%'),
     justifyContent: 'space-between',
   },
   itemHeader: {
@@ -500,145 +412,145 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   itemName: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontWeight: '600',
-    color: '#222',
+    color: COLORS.TEXT_DARK,
     flex: 1,
     flexWrap: 'wrap',
   },
   removeIconButton: {
-    marginLeft: 10,
-    backgroundColor: '#ffeded',
-    borderRadius: 12,
-    padding: 4,
+    marginLeft: wp('2.5%'),
+    backgroundColor: COLORS.CLEAR_BUTTON,
+    borderRadius: wp('3%'),
+    padding: wp('1%'),
   },
   removeIconText: {
-    color: '#ff4d4d',
-    fontSize: 16,
+    color: COLORS.ERROR,
+    fontSize: wp('4%'),
     fontWeight: 'bold',
   },
   typeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
-    marginBottom: 4,
+    marginTop: hp('0.2%'),
+    marginBottom: hp('0.5%'),
   },
   typeIcon: {
-    width: 16,
-    height: 16,
-    marginRight: 4,
+    width: wp('4%'),
+    height: wp('4%'),
+    marginRight: wp('1%'),
   },
   typeText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: wp('3%'),
+    color: COLORS.TEXT_SECONDARY,
     fontWeight: '500',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
   },
   itemPrice: {
-    fontSize: 14,
-    color: '#0014A8',
+    fontSize: wp('3.5%'),
+    color: COLORS.PRIMARY,
     fontWeight: 'bold',
   },
   itemTotal: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     color: '#444',
     fontWeight: '500',
   },
   quantityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: hp('0.8%'),
   },
   qtyBtn: {
-    backgroundColor: '#0014A8',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    backgroundColor: COLORS.PRIMARY,
+    width: wp('7%'),
+    height: wp('7%'),
+    borderRadius: wp('3.5%'),
     justifyContent: 'center',
     alignItems: 'center',
   },
   qtyBtnText: {
-    color: '#fff',
-    fontSize: 18,
+    color: COLORS.CARD,
+    fontSize: wp('4.5%'),
     fontWeight: 'bold',
   },
   quantity: {
-    marginHorizontal: 16,
-    fontSize: 16,
-    minWidth: 20,
+    marginHorizontal: wp('4%'),
+    fontSize: wp('4%'),
+    minWidth: wp('5%'),
     textAlign: 'center',
-    color: '#222',
+    color: COLORS.TEXT_DARK,
     fontWeight: 'bold',
   },
   billCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    marginHorizontal: 12,
-    marginBottom: 10,
-    padding: 16,
+    backgroundColor: COLORS.CARD,
+    borderRadius: wp('3.5%'),
+    marginHorizontal: wp('3%'),
+    marginBottom: hp('1.2%'),
+    padding: wp('4%'),
     elevation: 2,
-    shadowColor: '#0014A8',
-    shadowOffset: {width: 0, height: 2},
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: hp('0.2%') },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: wp('1%'),
   },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   billLabel: {
-    color: '#666',
-    fontSize: 15,
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: wp('3.8%'),
   },
   billValue: {
-    color: '#222',
-    fontSize: 15,
+    color: COLORS.TEXT_DARK,
+    fontSize: wp('3.8%'),
     fontWeight: '500',
   },
   billTotalRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#e6eaf2',
-    marginTop: 8,
-    paddingTop: 8,
+    borderTopWidth: wp('0.2%'),
+    borderTopColor: COLORS.BORDER,
+    marginTop: hp('1%'),
+    paddingTop: hp('1%'),
   },
   billTotalLabel: {
     fontWeight: 'bold',
-    fontSize: 17,
-    color: '#0014A8',
+    fontSize: wp('4.2%'),
+    color: COLORS.PRIMARY,
   },
   billTotalValue: {
     fontWeight: 'bold',
-    fontSize: 17,
-    color: '#0014A8',
+    fontSize: wp('4.2%'),
+    color: COLORS.PRIMARY,
   },
   payBtn: {
-    backgroundColor: '#0014A8',
-    borderRadius: 8,
-    marginTop: 14,
-    paddingVertical: 13,
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: wp('2%'),
+    marginTop: hp('1.8%'),
+    paddingVertical: hp('1.6%'),
     alignItems: 'center',
     elevation: 2,
   },
   payBtnText: {
-    color: '#fff',
-    fontSize: 16,
+    color: COLORS.CARD,
+    fontSize: wp('4%'),
     fontWeight: 'bold',
-    letterSpacing: 0.5,
+    letterSpacing: wp('0.1%'),
   },
   clearCartBtn: {
-    marginTop: 8,
+    marginTop: hp('1%'),
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: hp('1%'),
   },
   clearCartBtnText: {
-    color: '#ff4d4d',
-    fontSize: 15,
+    color: COLORS.ERROR,
+    fontSize: wp('3.8%'),
     fontWeight: '500',
   },
 });
