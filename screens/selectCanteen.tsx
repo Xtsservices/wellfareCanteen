@@ -10,6 +10,8 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Alert,
+  BackHandler,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -73,6 +75,28 @@ const SelectCanteenScreen = () => {
     setSelectedCanteen(canteenName);
   };
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Exit app when back is pressed on Dashboard
+        Alert.alert('Exit App', 'Are you sure you want to exit?', [
+          {text: 'Cancel', style: 'cancel'},
+          {text: 'Exit', onPress: () => BackHandler.exitApp()},
+        ]);
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      ); 
+
+      return () => {
+        backHandler.remove();
+      };
+    }, []),
+  );
+
   const handleConfirm = () => {
     if (selectedCanteen) {
       const selectedCanteenId = canteens.find(
@@ -114,10 +138,14 @@ const SelectCanteenScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#f5f7fa" />
       <View style={styles.header}>
         <Text style={styles.headerTitle}> Select Your Canteen</Text>
-        <Text style={styles.headerSubtitle}>
-          Click To Use
-        </Text>
+        <Text style={styles.headerSubtitle}>Click To Use</Text>
       </View>
+      <TouchableOpacity
+        style={styles.confirmButton}
+        onPress={() => navigation.navigate('SdkHome')}>
+        <Text style={styles.confirmButtonText}>Go to SdkHome</Text>
+      </TouchableOpacity>
+
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#010080" />
@@ -135,6 +163,7 @@ const SelectCanteenScreen = () => {
           }
         />
       )}
+
       {selectedCanteen && (
         <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
           <Text style={styles.confirmButtonText}>Confirm Selection</Text>
@@ -190,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 6,
     shadowColor: '#010080',
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 4},
     paddingVertical: 18,

@@ -40,6 +40,7 @@ import RNFS from 'react-native-fs';
 // It's kept here as it was in the original code and might be used elsewhere.
 import RNFetchBlob from 'rn-fetch-blob';
 import {ErrorBoundary} from 'react-error-boundary';
+import CashFreeSdk from './screens/cashFreeSDK/CashFreeSdk';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -80,6 +81,7 @@ const App = () => {
 
     return () => subscription.remove(); // Cleanup on unmount
   }, []);
+  
 
   useEffect(() => {
     const checkToken = async () => {
@@ -167,6 +169,7 @@ const App = () => {
           component={BluetoothControlScreen}
         />
         <Stack.Screen name="VerifyToken" component={VerifyTokenScreen} />
+        <Stack.Screen name="SdkHome" component={CashFreeSdk} />
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>

@@ -86,4 +86,5 @@ export type RootStackParamList = {
     totalAmount?: number;
   };
   PaymentServices: { paymentLink: any }
+  SdkHome: undefined;
 };

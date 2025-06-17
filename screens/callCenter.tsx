@@ -12,12 +12,20 @@ import {
 import DownNavbar from './downNavbar';
 
 const CallCenterScreen: React.FC = () => {
-  const phonenumber = AsyncStorage.getItem('phonenumber');
-  console.log(phonenumber, 'phonenumber');
+  const phonenumber = AsyncStorage.getItem('phoneNumber');
+  React.useEffect(() => {
+    const fetchPhoneNumber = async () => {
+      const value = await AsyncStorage.getItem('phoneNumber');
+      console.log(value, 'phonenumber');
+    };
+    fetchPhoneNumber();
+  }, []);
 
   const handleApiCall = async (option: number) => {
     const apiUrl =
       'https://iqtelephony.airtel.in/gateway/airtel-xchange/v2/execute/workflow';
+    const phoneNumber = await AsyncStorage.getItem('phoneNumber');
+    console.log(phoneNumber, 'phoneNumber==============');
     const payload = {
       callFlowId:
         'TUMspyjWoYb+Ul8vp2khpgWZix3lECvaXcJtTQ78KKK6ZrDHJu7L4PH+3GpdB3h+NZote2LjQdUQy1S9rnLnpLO4EZ0yMMDdK9TZynTxHEU=',
@@ -29,7 +37,7 @@ const CallCenterScreen: React.FC = () => {
           mergingStrategy: 'SEQUENTIAL',
           participants: [
             {
-              participantAddress: 'phoneNumber',
+              participantAddress: phoneNumber || '',
               callerId: '8048248411',
               participantName: 'abc',
               maxRetries: 1,
@@ -48,7 +56,7 @@ const CallCenterScreen: React.FC = () => {
                   ? '9494999989'
                   : option === 2
                   ? '7093081518'
-                  : '9182161124',
+                  : '9052519059',
               participantName: 'pqr',
               maxRetries: 1,
               maxTime: 360,

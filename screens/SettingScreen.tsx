@@ -26,7 +26,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
   const handleLogout = async () => {
     // Remove token from storage (example using AsyncStorage)
     try {
-      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('authorization');
+      await AsyncStorage.removeItem('phoneNumber');
     } catch (e) {
       // handle error if needed
     }

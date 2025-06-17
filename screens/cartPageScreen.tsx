@@ -22,6 +22,7 @@ import {
 } from './services/cartHelpers';
 import {StackNavigationProp} from '@react-navigation/stack';
 import axios from 'axios';
+import Header from './header';
 
 const CartPage = () => {
   const navigation = useNavigation();
@@ -203,7 +204,7 @@ const CartPage = () => {
   return (
     <View style={styles.container}>
       {/* Custom Header */}
-      <View style={styles.headerContainer}>
+      {/* <View style={styles.headerContainer}>
         <Image
           source={{
             uri: 'https://welfarecanteen.in/public/Naval.jpg',
@@ -229,7 +230,8 @@ const CartPage = () => {
             />
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
+      <Header text={"My Cart"}/>
 
       {/* Cart Items */}
       <ScrollView style={styles.cartItems}>
