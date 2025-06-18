@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { API_BASE_URL } from '../services/restApi';
 
 // Base API URL
-const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 
 const getToken = () => {
     return AsyncStorage.getItem('authorization')

@@ -41,6 +41,7 @@ import RNFS from 'react-native-fs';
 import RNFetchBlob from 'rn-fetch-blob';
 import {ErrorBoundary} from 'react-error-boundary';
 import CashFreeSdk from './screens/cashFreeSDK/CashFreeSdk';
+import PaymentStatusScreen from './screens/PaymentStatusScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -170,6 +171,7 @@ const App = () => {
         />
         <Stack.Screen name="VerifyToken" component={VerifyTokenScreen} />
         <Stack.Screen name="SdkHome" component={CashFreeSdk} />
+        <Stack.Screen name="PaymentStatusScreen" component={PaymentStatusScreen} />
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>

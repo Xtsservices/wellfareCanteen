@@ -14,9 +14,9 @@ import { RootStackParamList } from './navigationTypes';
 import Header from './header';
 import DownNavbar from './downNavbar';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { API_BASE_URL } from './services/restApi';
 
 // Constants
-const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 const COLORS = {
   PRIMARY: '#0014A8',
   TEXT_DARK: '#333',

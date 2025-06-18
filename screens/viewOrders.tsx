@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { API_BASE_URL } from './services/restApi';
 
 // Note: Ensure required dependencies are installed:
 // 1. Run `npm install react-native-responsive-screen react-native-view-shot @react-native-camera-roll/camera-roll axios @react-native-async-storage/async-storage`
@@ -38,7 +39,7 @@ const ViewOrders: React.FC = () => {
       try {
         const token = await AsyncStorage.getItem('authorization');
         const response = await axios.get(
-          'https://server.welfarecanteen.in/api/order/listOrders',
+          `${API_BASE_URL}/order/listOrders`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ const ViewOrders: React.FC = () => {
               const token = await AsyncStorage.getItem('authorization');
 
               const response = await axios.post(
-                'https://server.welfarecanteen.in/api/order/cancelOrder',
+                `${API_BASE_URL}/order/cancelOrder`,
                 { orderId },
                 {
                   headers: {

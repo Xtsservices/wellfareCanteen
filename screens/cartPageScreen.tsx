@@ -24,7 +24,6 @@ import {
 } from './services/cartHelpers';
 
 // Constants
-const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 const COLORS = {
   PRIMARY: '#0014A8', // Vibrant blue
   ERROR: '#ff4d4d', // Red for errors

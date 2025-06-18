@@ -32,9 +32,9 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { API_BASE_URL } from './services/restApi';
 
 // Constants
-const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 const COLORS = {
   PRIMARY: '#0014A8',
   ERROR: '#ff0000', // Corrected 'red' to hex code
@@ -304,7 +304,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header text={menuData?.name || 'Menu'} />
+      <Header text={menuData?.name || 'Menu'}/>
       <ScrollView contentContainerStyle={styles.menuListContainer}>
         {menuData?.menuItems?.length === 0 || !menuData?.menuItems ? (
           <View style={styles.centeredContainer}>

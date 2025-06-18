@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {CartData, CartItem} from './types';
+import { API_BASE_URL } from '../../services/restApi';
 
 // Fetch cart data from the API
 export const fetchCartData = async (): Promise<CartData | null> => {
@@ -10,7 +11,7 @@ export const fetchCartData = async (): Promise<CartData | null> => {
     }
 
     const response = await fetch(
-      'https://server.welfarecanteen.in/api/cart/getCart',
+      `${API_BASE_URL}/cart/getCart`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +46,7 @@ export const addItemToCart = async (
     }
     const date = await AsyncStorage.getItem('date');
 
-    const response = await fetch('https://server.welfarecanteen.in/api/cart/add', {
+    const response = await fetch(`${API_BASE_URL}/cart/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ export const updateCartItemQuantity = async (
     }
 
     const response = await fetch(
-      'https://server.welfarecanteen.in/api/cart/updateQuantity',
+      `${API_BASE_URL}/cart/updateQuantity`,
       {
         method: 'POST',
         headers: {
@@ -114,7 +115,7 @@ export const removeCartItem = async (
     }
 
     const response = await fetch(
-      'https://server.welfarecanteen.in/api/cart/removeItem',
+      `${API_BASE_URL}/cart/removeItem`,
       {
         method: 'POST',
         headers: {

@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {dispatch} from '../../store/store';
+import { API_BASE_URL } from './restApi';
 
-// Base API URL
-const API_BASE_URL = 'https://server.welfarecanteen.in/api';
+
 
 // Get authorization token
 export const getAuthToken = async () => {
@@ -140,7 +140,7 @@ export const updateCartItemQuantity = async (
 
     return response.data;
   } catch (error) {
-    console.error('Error updating cart item quantity:', error);
+    console.error('Error updating cart item quantity:=====', error);
     throw error;
   }
 };
@@ -159,6 +159,8 @@ export const removeCartItem = async (
       cartId,
       cartItemId,
     };
+    console.log('Remove item payload:', payload);
+    console.log('Remove item payload:', API_BASE_URL);
 
     const response = await axios.post(
       `${API_BASE_URL}/cart/removeCartItem`,
@@ -170,7 +172,7 @@ export const removeCartItem = async (
         },
       },
     );
-
+console.log('Response from removeCartItem:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error removing cart item:', error);
@@ -223,7 +225,7 @@ export const fetchDashboardData = async () => {
   try {
     const token = await AsyncStorage.getItem('authorization');
     const response = await fetch(
-      'https://server.welfarecanteen.in/api/adminDasboard/dashboard',
+      `${API_BASE_URL}/adminDasboard/dashboard`,
       {
         headers: {
           Authorization: token || '',
@@ -241,7 +243,7 @@ export const fetchRecentOrders = async () => {
   try {
     const token = await AsyncStorage.getItem('authorization');
     const response = await fetch(
-      'https://server.welfarecanteen.in/api/adminDasboard/getTotalOrders',
+      `${API_BASE_URL}/adminDasboard/getTotalOrders`,
       {
         headers: {
           Authorization: token || '',

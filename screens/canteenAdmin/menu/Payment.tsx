@@ -15,6 +15,7 @@ import { RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
 import Icon from 'react-native-vector-icons/Feather';
+import { API_BASE_URL } from '../../services/restApi';
 
 
 type PaymentScreenRouteProp = RouteProp<RootStackParamList, 'Payment'>;
@@ -69,7 +70,7 @@ const Payment: React.FC<PaymentScreenProps> = ({ route }) => {
           throw new Error('No authorization token found');
         }
 
-        const response = await fetch('https://server.welfarecanteen.in/api/cart/getCart', {
+        const response = await fetch(`${API_BASE_URL}/cart/getCart`, {
           headers: {
             'Content-Type': 'application/json',
             authorization: token,
@@ -137,7 +138,7 @@ const Payment: React.FC<PaymentScreenProps> = ({ route }) => {
         return;
       }
 
-      const response = await fetch('https://server.welfarecanteen.in/api/order/placeOrder', {
+      const response = await fetch(`${API_BASE_URL}/order/placeOrder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
