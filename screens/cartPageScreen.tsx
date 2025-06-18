@@ -26,15 +26,15 @@ import {
 // Constants
 const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 const COLORS = {
-  PRIMARY: '#0014A8',
-  ERROR: '#ff4d4d',
-  TEXT_SECONDARY: '#666',
-  TEXT_DARK: '#222',
-  TEXT_LIGHT: '#888',
-  BACKGROUND: '#F4F6FB',
-  CARD: '#fff',
-  CLEAR_BUTTON: '#ffeded',
-  BORDER: '#e6eaf2',
+  PRIMARY: '#0014A8', // Vibrant blue
+  ERROR: '#ff4d4d', // Red for errors
+  TEXT_SECONDARY: '#666', // Gray for secondary text
+  TEXT_DARK: '#222', // Dark gray for primary text
+  TEXT_LIGHT: '#888', // Light gray for subtle text
+  BACKGROUND: '#F4F6FB', // Light blue background
+  CARD: '#fff', // White for cards
+  CLEAR_BUTTON: '#ffeded', // Light red for clear button
+  BORDER: '#e6eaf2', // Light border color
 };
 
 // Type Definitions
@@ -155,7 +155,7 @@ const EmptyCart = memo(({ onContinueShopping }: { onContinueShopping: () => void
   </View>
 ));
 
-const CartPage = () => {
+const CartPage: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,12 +163,18 @@ const CartPage = () => {
   const [updatingItems, setUpdatingItems] = useState<number[]>([]);
 
   const loadCartData = useCallback(async () => {
+    console.log('Loading cart data...');
+    setError(''); // Reset error state
     try {
       setLoading(true);
+    console.log('Loading cart data...-0-0-0====================',100);
+
       const data = await fetchCartData();
+    console.log('Loading cart data...-0-0-0====================',data);
+
       setCartData(data);
     } catch (err) {
-      setError('Failed to fetch cart data');
+      setError('Failed to load cart data');
       console.error('Error fetching cart data:', err);
     } finally {
       setLoading(false);
@@ -177,23 +183,12 @@ const CartPage = () => {
 
   useEffect(() => {
     loadCartData();
-  }, [loadCartData, updatingItems]);
+  }, [loadCartData]);
 
   const updateItemQuantity = useCallback(async (cartItem: CartItem, newQuantity: number) => {
     try {
       setUpdatingItems(prev => [...prev, cartItem.id]);
-      const body = {
-        cartItemId: cartItem.item?.id,
-        quantity: newQuantity,
-        cartId: cartData?.id,
-      };
-      const token = await AsyncStorage.getItem('authorization');
-      await axios.post(`${API_BASE_URL}/cart/updateCartItem`, body, {
-        headers: {
-          'Content-Type': 'application/json',
-          authorization: token || '',
-        },
-      });
+      await updateCartItemQuantity(cartData?.id || 0, cartItem.id, newQuantity);
       await loadCartData();
     } catch (err) {
       setError('Failed to update cart item');
@@ -206,14 +201,14 @@ const CartPage = () => {
   const handleRemoveItem = useCallback(async (item: CartItem) => {
     try {
       if (!cartData) return;
-      setUpdatingItems(prev => [...prev, Number(item.item?.id)]);
-      await removeCartItem(Number(item.cartId), Number(item.item?.id));
+      setUpdatingItems(prev => [...prev, item.id]);
+      await removeCartItem(cartData.id, item.id);
       await loadCartData();
     } catch (err) {
       setError('Failed to remove cart item');
       console.error('Error removing cart item:', err);
     } finally {
-      setUpdatingItems(prev => prev.filter(id => id !== item.item?.id));
+      setUpdatingItems(prev => prev.filter(id => id !== item.id));
     }
   }, [cartData, loadCartData]);
 
@@ -257,8 +252,11 @@ const CartPage = () => {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+      <View style={styles.container}>
+        <Header text="My Cart" />
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        </View>
         <DownNavbar />
       </View>
     );
@@ -266,11 +264,14 @@ const CartPage = () => {
 
   if (error) {
     return (
-      <View style={[styles.container, styles.errorContainer]}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={loadCartData}>
-          <Text style={styles.refreshButtonText}>Try Again</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <Header text="My Cart" />
+        <View style={styles.centeredContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.refreshButton} onPress={loadCartData}>
+            <Text style={styles.refreshButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
         <DownNavbar />
       </View>
     );
@@ -283,7 +284,7 @@ const CartPage = () => {
       <Header text="My Cart" />
       {cartData?.cartItems?.length ? (
         <>
-          <ScrollView style={styles.cartItems}>
+          <ScrollView contentContainerStyle={styles.cartItems}>
             {cartData.cartItems.map(item => (
               <CartItemComponent
                 key={item.id}
@@ -312,39 +313,32 @@ const CartPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: COLORS.BACKGROUND, // #F4F6FB
   },
-  loadingContainer: {
+  centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff0f0',
     paddingHorizontal: wp('6%'),
   },
   errorText: {
-    color: COLORS.ERROR,
-    fontSize: wp('4%'),
-    fontWeight: 'bold',
+    color: COLORS.ERROR, // #ff4d4d
+    fontSize: wp('4.2%'),
+    fontWeight: '600',
     marginBottom: hp('2%'),
     textAlign: 'center',
   },
   refreshButton: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY, // #0014A8
     borderRadius: wp('2%'),
     paddingVertical: hp('1.2%'),
     paddingHorizontal: wp('6%'),
     alignItems: 'center',
-    marginTop: hp('0.5%'),
   },
   refreshButtonText: {
-    color: COLORS.CARD,
+    color: COLORS.CARD, // #fff
     fontSize: wp('3.8%'),
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   emptyCartContainer: {
     flex: 1,
@@ -353,57 +347,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp('6%'),
   },
   emptyCartIcon: {
-    width: wp('20%'),
-    height: wp('20%'),
-    marginBottom: hp('2%'),
-    tintColor: COLORS.TEXT_LIGHT,
+    width: wp('25%'),
+    height: wp('25%'),
+    marginBottom: hp('3%'),
+    tintColor: COLORS.TEXT_LIGHT, // #888
   },
   emptyCartText: {
-    fontSize: wp('4.5%'),
-    color: COLORS.TEXT_LIGHT,
-    fontWeight: 'bold',
-    marginBottom: hp('2%'),
+    fontSize: wp('4.8%'),
+    color: COLORS.TEXT_DARK, // #222
+    fontWeight: '600',
+    marginBottom: hp('3%'),
     textAlign: 'center',
   },
   continueShoppingButton: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY, // #0014A8
     borderRadius: wp('2%'),
-    paddingVertical: hp('1.2%'),
-    paddingHorizontal: wp('6%'),
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('8%'),
     alignItems: 'center',
-    marginBottom: hp('3%'),
   },
   continueShoppingText: {
-    color: COLORS.CARD,
-    fontSize: wp('3.8%'),
-    fontWeight: 'bold',
+    color: COLORS.CARD, // #fff
+    fontSize: wp('4%'),
+    fontWeight: '600',
   },
   cartItems: {
-    flex: 1,
-    paddingHorizontal: wp('2.5%'),
-    marginTop: hp('1%'),
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
+    paddingBottom: hp('20%'), // Extra padding to avoid overlap with BillSummary
   },
   cartItemCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.CARD,
+    backgroundColor: COLORS.CARD, // #fff
     borderRadius: wp('3%'),
-    marginBottom: hp('1.8%'),
-    padding: wp('3%'),
+    marginBottom: hp('2%'),
+    padding: wp('3.5%'),
     elevation: 2,
-    shadowColor: COLORS.PRIMARY,
+    shadowColor: COLORS.PRIMARY, // #0014A8
     shadowOffset: { width: 0, height: hp('0.2%') },
-    shadowOpacity: 0.07,
-    shadowRadius: wp('1%'),
+    shadowOpacity: 0.08,
+    shadowRadius: wp('1.5%'),
   },
   itemImage: {
-    width: wp('18%'),
-    height: wp('18%'),
-    borderRadius: wp('2.5%'),
-    backgroundColor: COLORS.BORDER,
+    width: wp('20%'),
+    height: wp('20%'),
+    borderRadius: wp('2%'),
+    backgroundColor: COLORS.BORDER, // #e6eaf2
   },
   itemInfo: {
     flex: 1,
-    marginLeft: wp('3.5%'),
+    marginLeft: wp('3%'),
     justifyContent: 'space-between',
   },
   itemHeader: {
@@ -412,92 +405,90 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   itemName: {
-    fontSize: wp('4%'),
+    fontSize: wp('4.2%'),
     fontWeight: '600',
-    color: COLORS.TEXT_DARK,
+    color: COLORS.TEXT_DARK, // #222
     flex: 1,
-    flexWrap: 'wrap',
+    marginRight: wp('2%'),
   },
   removeIconButton: {
-    marginLeft: wp('2.5%'),
-    backgroundColor: COLORS.CLEAR_BUTTON,
-    borderRadius: wp('3%'),
-    padding: wp('1%'),
+    backgroundColor: COLORS.CLEAR_BUTTON, // #ffeded
+    borderRadius: wp('50%'),
+    padding: wp('1.5%'),
   },
   removeIconText: {
-    color: COLORS.ERROR,
-    fontSize: wp('4%'),
-    fontWeight: 'bold',
+    color: COLORS.ERROR, // #ff4d4d
+    fontSize: wp('3.5%'),
+    fontWeight: '600',
   },
   typeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: hp('0.2%'),
-    marginBottom: hp('0.5%'),
+    marginVertical: hp('0.5%'),
   },
   typeIcon: {
-    width: wp('4%'),
-    height: wp('4%'),
-    marginRight: wp('1%'),
+    width: wp('4.5%'),
+    height: wp('4.5%'),
+    marginRight: wp('1.5%'),
   },
   typeText: {
-    fontSize: wp('3%'),
-    color: COLORS.TEXT_SECONDARY,
+    fontSize: wp('3.2%'),
+    color: COLORS.TEXT_SECONDARY, // #666
     fontWeight: '500',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: hp('0.5%'),
+    marginVertical: hp('0.5%'),
   },
   itemPrice: {
-    fontSize: wp('3.5%'),
-    color: COLORS.PRIMARY,
-    fontWeight: 'bold',
+    fontSize: wp('3.8%'),
+    color: COLORS.PRIMARY, // #0014A8
+    fontWeight: '600',
   },
   itemTotal: {
-    fontSize: wp('3.2%'),
-    color: '#444',
+    fontSize: wp('3.5%'),
+    color: COLORS.TEXT_SECONDARY, // #666
     fontWeight: '500',
   },
   quantityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: hp('0.8%'),
+    marginTop: hp('1%'),
   },
   qtyBtn: {
-    backgroundColor: COLORS.PRIMARY,
-    width: wp('7%'),
-    height: wp('7%'),
-    borderRadius: wp('3.5%'),
+    backgroundColor: COLORS.PRIMARY, // #0014A8
+    width: wp('8%'),
+    height: wp('8%'),
+    borderRadius: wp('2%'),
     justifyContent: 'center',
     alignItems: 'center',
   },
   qtyBtnText: {
-    color: COLORS.CARD,
+    color: COLORS.CARD, // #fff
     fontSize: wp('4.5%'),
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   quantity: {
-    marginHorizontal: wp('4%'),
+    marginHorizontal: wp('3%'),
     fontSize: wp('4%'),
-    minWidth: wp('5%'),
+    minWidth: wp('6%'),
     textAlign: 'center',
-    color: COLORS.TEXT_DARK,
-    fontWeight: 'bold',
+    color: COLORS.TEXT_DARK, // #222
+    fontWeight: '600',
   },
   billCard: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: wp('3.5%'),
-    marginHorizontal: wp('3%'),
-    marginBottom: hp('1.2%'),
+    backgroundColor: COLORS.CARD, // #fff
+    borderRadius: wp('3%'),
+    marginHorizontal: wp('4%'),
+    marginBottom: hp('10%'), // Space for DownNavbar
     padding: wp('4%'),
-    elevation: 2,
-    shadowColor: COLORS.PRIMARY,
-    shadowOffset: { width: 0, height: hp('0.2%') },
-    shadowOpacity: 0.08,
-    shadowRadius: wp('1%'),
+    elevation: 3,
+    shadowColor: COLORS.PRIMARY, // #0014A8
+    shadowOffset: { width: 0, height: hp('0.3%') },
+    shadowOpacity: 0.1,
+    shadowRadius: wp('2%'),
   },
   billRow: {
     flexDirection: 'row',
@@ -505,51 +496,52 @@ const styles = StyleSheet.create({
     marginBottom: hp('1%'),
   },
   billLabel: {
-    color: COLORS.TEXT_SECONDARY,
+    color: COLORS.TEXT_SECONDARY, // #666
     fontSize: wp('3.8%'),
+    fontWeight: '500',
   },
   billValue: {
-    color: COLORS.TEXT_DARK,
+    color: COLORS.TEXT_DARK, // #222
     fontSize: wp('3.8%'),
     fontWeight: '500',
   },
   billTotalRow: {
     borderTopWidth: wp('0.2%'),
-    borderTopColor: COLORS.BORDER,
+    borderTopColor: COLORS.BORDER, // #e6eaf2
     marginTop: hp('1%'),
     paddingTop: hp('1%'),
   },
   billTotalLabel: {
-    fontWeight: 'bold',
-    fontSize: wp('4.2%'),
-    color: COLORS.PRIMARY,
+    fontWeight: '600',
+    fontSize: wp('4%'),
+    color: COLORS.PRIMARY, // #0014A8
   },
   billTotalValue: {
-    fontWeight: 'bold',
-    fontSize: wp('4.2%'),
-    color: COLORS.PRIMARY,
+    fontWeight: '600',
+    fontSize: wp('4%'),
+    color: COLORS.PRIMARY, // #0014A8
   },
   payBtn: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY, // #0014A8
     borderRadius: wp('2%'),
-    marginTop: hp('1.8%'),
-    paddingVertical: hp('1.6%'),
+    marginTop: hp('2%'),
+    paddingVertical: hp('1.5%'),
     alignItems: 'center',
     elevation: 2,
   },
   payBtnText: {
-    color: COLORS.CARD,
+    color: COLORS.CARD, // #fff
     fontSize: wp('4%'),
-    fontWeight: 'bold',
+    fontWeight: '600',
     letterSpacing: wp('0.1%'),
   },
   clearCartBtn: {
-    marginTop: hp('1%'),
+    marginTop: hp('1.5%'),
     alignItems: 'center',
     paddingVertical: hp('1%'),
   },
   clearCartBtnText: {
-    color: COLORS.ERROR,
+    color: COLORS.ERROR, // #ff4d4d
     fontSize: wp('3.8%'),
     fontWeight: '500',
   },

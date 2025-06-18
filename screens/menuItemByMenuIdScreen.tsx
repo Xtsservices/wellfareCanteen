@@ -14,8 +14,8 @@ import {
   useNavigation,
   useRoute,
 } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from './navigationTypes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DownNavbar from './downNavbar';
@@ -28,13 +28,16 @@ import {
   removeCartItem,
   findCartItemByItemId,
 } from './services/cartHelpers';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 // Constants
 const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 const COLORS = {
   PRIMARY: '#0014A8',
-  ERROR: '#red',
+  ERROR: '#ff0000', // Corrected 'red' to hex code
   TEXT_SECONDARY: '#666',
   TEXT_DARK: '#222',
   TEXT_LIGHT: '#333',
@@ -55,7 +58,7 @@ type MenuItemsByMenuIdScreenRouteProp = RouteProp<
   'MenubyMenuId'
 >;
 
-const MenuItemsByMenuIdScreenNew = () => {
+const MenuItemsByMenuIdScreenNew: React.FC = () => {
   const navigation = useNavigation<MenuItemsByMenuIdScreenNavigationProp>();
   const route = useRoute<MenuItemsByMenuIdScreenRouteProp>();
   const [menuData, setMenuData] = useState<MenuData | null>(null);
@@ -142,6 +145,7 @@ const MenuItemsByMenuIdScreenNew = () => {
   );
 
   const addToCart = useCallback(async (item: any, menudata: MenuData) => {
+    
     try {
       setUpdateLoading(item.id);
       const minQty = 1;
@@ -265,8 +269,10 @@ const MenuItemsByMenuIdScreenNew = () => {
     return (
       <View style={styles.container}>
         <Header text="Loading Menu" />
-        <Text style={styles.loadingText}>Loading menu items...</Text>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        <View style={styles.centeredContainer}>
+          <Text style={styles.loadingText}>Loading menu items...</Text>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        </View>
         <DownNavbar />
       </View>
     );
@@ -276,7 +282,9 @@ const MenuItemsByMenuIdScreenNew = () => {
     return (
       <View style={styles.container}>
         <Header text="Menu Error" />
-        <Text style={styles.errorText}>{error}</Text>
+        <View style={styles.centeredContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
         <DownNavbar />
       </View>
     );
@@ -286,7 +294,9 @@ const MenuItemsByMenuIdScreenNew = () => {
     return (
       <View style={styles.container}>
         <Header text="No Menu" />
-        <Text style={styles.errorText}>No menu data available</Text>
+        <View style={styles.centeredContainer}>
+          <Text style={styles.errorText}>No menu data available</Text>
+        </View>
         <DownNavbar />
       </View>
     );
@@ -296,71 +306,77 @@ const MenuItemsByMenuIdScreenNew = () => {
     <View style={styles.container}>
       <Header text={menuData?.name || 'Menu'} />
       <ScrollView contentContainerStyle={styles.menuListContainer}>
-        {menuData?.menuItems?.map((item: MenuItem) => (
-          <View key={item.id} style={styles.menuCard}>
-            <Image
-              source={{
-                uri: item?.item?.image
-                  ? `data:image/png;base64,${item?.item?.image}`
-                  : 'https://via.placeholder.com/120',
-              }}
-              style={styles.menuCardImage}
-            />
-            <View style={styles.menuCardContent}>
-              <View style={styles.menuCardHeader}>
-                <Text style={styles.menuCardName}>{item?.item?.name}</Text>
-                <Text style={styles.menuCardPrice}>₹{item.item.pricing.price}</Text>
-              </View>
-              <View style={styles.menuCardTypeRow}>
-                <Image
-                  source={{
-                    uri:
-                      item?.item?.type?.toLowerCase() === 'veg'
-                        ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
-                        : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
-                  }}
-                  style={styles.menuCardTypeIcon}
-                />
-                <Text style={styles.menuCardTypeText}>
-                  {item?.item?.type?.toUpperCase() || 'N/A'}
+        {menuData?.menuItems?.length === 0 || !menuData?.menuItems ? (
+          <View style={styles.centeredContainer}>
+            <Text style={styles.noItemsText}>No menu items available</Text>
+          </View>
+        ) : (
+          menuData.menuItems.map((item: MenuItem) => (
+            <View key={item.id} style={styles.menuCard}>
+              <Image
+                source={{
+                  uri: item?.item?.image
+                    ? `data:image/png;base64,${item?.item?.image}`
+                    : 'https://via.placeholder.com/120',
+                }}
+                style={styles.menuCardImage}
+              />
+              <View style={styles.menuCardContent}>
+                <View style={styles.menuCardHeader}>
+                  <Text style={styles.menuCardName}>{item?.item?.name}</Text>
+                  <Text style={styles.menuCardPrice}>₹{item.item.pricing.price}</Text>
+                </View>
+                <View style={styles.menuCardTypeRow}>
+                  <Image
+                    source={{
+                      uri:
+                        item?.item?.type?.toLowerCase() === 'veg'
+                          ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
+                          : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
+                    }}
+                    style={styles.menuCardTypeIcon}
+                  />
+                  <Text style={styles.menuCardTypeText}>
+                    {item?.item?.type?.toUpperCase() || 'N/A'}
+                  </Text>
+                </View>
+                <Text style={styles.menuCardDesc} numberOfLines={2}>
+                  {item.item.description || 'No description available'}
                 </Text>
-              </View>
-              <Text style={styles.menuCardDesc} numberOfLines={2}>
-                {item.item.description || 'No description available'}
-              </Text>
-              <View style={styles.menuCardActionRow}>
-                {updateLoading === item.id ? (
-                  <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-                ) : !cartItems[item.item.id] ? (
-                  <TouchableOpacity
-                    style={styles.menuCardAddBtn}
-                    onPress={() => addToCart(item, menuData)}
-                  >
-                    <Text style={styles.menuCardAddBtnText}>ADD</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.menuCardQtyRow}>
+                <View style={styles.menuCardActionRow}>
+                  {updateLoading === item.id ? (
+                    <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+                  ) : !cartItems[item.item.id] ? (
                     <TouchableOpacity
-                      style={styles.menuCardQtyBtn}
-                      onPress={() => decreaseQuantity(item)}
+                      style={styles.menuCardAddBtn}
+                      onPress={() => addToCart(item, menuData)}
                     >
-                      <Text style={styles.menuCardQtyBtnText}>-</Text>
+                      <Text style={styles.menuCardAddBtnText}>ADD</Text>
                     </TouchableOpacity>
-                    <Text style={styles.menuCardQtyText}>
-                      {cartItems[item.item.id]?.quantity || 0}
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.menuCardQtyBtn}
-                      onPress={() => increaseQuantity(item)}
-                    >
-                      <Text style={styles.menuCardQtyBtnText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                  ) : (
+                    <View style={styles.menuCardQtyRow}>
+                      <TouchableOpacity
+                        style={styles.menuCardQtyBtn}
+                        onPress={() => decreaseQuantity(item)}
+                      >
+                        <Text style={styles.menuCardQtyBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.menuCardQtyText}>
+                        {cartItems[item.item.id]?.quantity || 0}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.menuCardQtyBtn}
+                        onPress={() => increaseQuantity(item)}
+                      >
+                        <Text style={styles.menuCardQtyBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </ScrollView>
       {Object.keys(cartItems).length > 0 && (
         <TouchableOpacity
@@ -379,7 +395,12 @@ const MenuItemsByMenuIdScreenNew = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: COLORS.BACKGROUND, // #f7f8fa
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuListContainer: {
     padding: wp('4%'),
@@ -387,11 +408,11 @@ const styles = StyleSheet.create({
   },
   menuCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.CARD,
+    backgroundColor: COLORS.CARD, // #fff
     borderRadius: wp('3.5%'),
     marginBottom: hp('2%'),
     elevation: 2,
-    shadowColor: COLORS.PRIMARY,
+    shadowColor: COLORS.PRIMARY, // #0014A8
     shadowOpacity: 0.08,
     shadowRadius: wp('2%'),
     shadowOffset: { width: 0, height: hp('0.2%') },
@@ -419,14 +440,14 @@ const styles = StyleSheet.create({
   menuCardName: {
     fontSize: wp('4.2%'),
     fontWeight: '600',
-    color: COLORS.TEXT_DARK,
+    color: COLORS.TEXT_DARK, // #222
     flex: 1,
     marginRight: wp('2%'),
   },
   menuCardPrice: {
     fontSize: wp('4%'),
     fontWeight: 'bold',
-    color: COLORS.PRIMARY,
+    color: COLORS.PRIMARY, // #0014A8
     marginLeft: wp('2%'),
   },
   menuCardTypeRow: {
@@ -441,12 +462,12 @@ const styles = StyleSheet.create({
   },
   menuCardTypeText: {
     fontSize: wp('3%'),
-    color: COLORS.TEXT_SECONDARY,
+    color: COLORS.TEXT_SECONDARY, // #666
     fontWeight: '500',
   },
   menuCardDesc: {
     fontSize: wp('3.2%'),
-    color: COLORS.TEXT_SECONDARY,
+    color: COLORS.TEXT_SECONDARY, // #666
     marginVertical: hp('0.5%'),
     lineHeight: hp('2%'),
   },
@@ -455,7 +476,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   menuCardAddBtn: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY, // #0014A8
     paddingVertical: hp('0.8%'),
     paddingHorizontal: wp('7%'),
     borderRadius: wp('5%'),
@@ -463,7 +484,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   menuCardAddBtnText: {
-    color: COLORS.CARD,
+    color: COLORS.CARD, // #fff
     fontWeight: 'bold',
     fontSize: wp('3.5%'),
     letterSpacing: wp('0.2%'),
@@ -471,7 +492,7 @@ const styles = StyleSheet.create({
   menuCardQtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.QTY_BG,
+    backgroundColor: COLORS.QTY_BG, // #f0f2f5
     borderRadius: wp('5%'),
     paddingVertical: hp('0.4%'),
     paddingHorizontal: wp('2%'),
@@ -480,58 +501,65 @@ const styles = StyleSheet.create({
     width: wp('7%'),
     height: wp('7%'),
     borderRadius: wp('3.5%'),
-    backgroundColor: COLORS.CARD,
+    backgroundColor: COLORS.CARD, // #fff
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: wp('0.2%'),
-    borderColor: COLORS.BORDER,
+    borderColor: COLORS.BORDER, // #d1d5db
     marginHorizontal: wp('0.5%'),
   },
   menuCardQtyBtnText: {
     fontSize: wp('4.5%'),
     fontWeight: 'bold',
-    color: COLORS.PRIMARY,
+    color: COLORS.PRIMARY, // #0014A8
   },
   menuCardQtyText: {
     marginHorizontal: wp('2.5%'),
     fontSize: wp('4%'),
     fontWeight: 'bold',
-    color: COLORS.TEXT_DARK,
+    color: COLORS.TEXT_DARK, // #222
   },
   goToCartButton: {
     position: 'absolute',
     bottom: hp('9%'),
     left: wp('10%'),
     right: wp('10%'),
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY, // #0014A8
     borderRadius: wp('2%'),
     paddingVertical: hp('1.2%'),
     alignItems: 'center',
     zIndex: 10,
     elevation: 6,
-    shadowColor: COLORS.PRIMARY,
+    shadowColor: COLORS.PRIMARY, // #0014A8
     shadowOpacity: 0.15,
     shadowRadius: wp('2%'),
     shadowOffset: { width: 0, height: hp('0.2%') },
     marginBottom: hp('1%'),
   },
   goToCartButtonText: {
-    color: COLORS.CARD,
+    color: COLORS.CARD, // #fff
     fontWeight: 'bold',
     fontSize: wp('3.8%'),
     letterSpacing: wp('0.2%'),
   },
   loadingText: {
-    color: COLORS.TEXT_LIGHT,
+    color: COLORS.TEXT_LIGHT, // #333
     textAlign: 'center',
-    marginTop: hp('2%'),
+    marginBottom: hp('2%'),
     fontSize: wp('4%'),
   },
   errorText: {
-    color: COLORS.ERROR,
+    color: COLORS.ERROR, // #ff0000
     textAlign: 'center',
-    marginTop: hp('2%'),
+    marginBottom: hp('2%'),
     fontSize: wp('4%'),
+  },
+  noItemsText: {
+    color: '#000', // Black text for consistency
+    textAlign: 'center',
+    fontSize: wp('4.5%'),
+    fontWeight: '600',
+    marginBottom: hp('2%'),
   },
 });
 

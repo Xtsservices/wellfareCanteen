@@ -65,6 +65,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation, route }) => {
             authorization: token,
           },
         });
+          console.log("response.data.data",response.data.data);
 
         setMenuData(response.data.data);
         setLoading(false);
@@ -129,7 +130,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <Header text="Dashboard" />
-      <View style={styles.searchBar}>
+      {/* <View style={styles.searchBar}>
         <Image
           source={{ uri: 'https://img.icons8.com/ios-filled/50/000000/search--v1.png' }}
           style={styles.searchIcon}
@@ -141,7 +142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation, route }) => {
             style={styles.micIcon}
           />
         </TouchableOpacity>
-      </View>
+      </View> */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {menuData && Object.keys(menuData).length > 0 ? (
           Object.keys(menuData).map((date) => renderMenuItems(date, menuData[date]))

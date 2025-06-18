@@ -1,8 +1,8 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from './navigationTypes'; // Adjust the import path as necessary
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from './navigationTypes';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -13,36 +13,36 @@ type DashboardScreenNavigationProp = StackNavigationProp<
   'Dashboard'
 >;
 
-interface DashboardProps {
+interface HeaderProps {
   text: string;
 }
 
-const Header: React.FC<DashboardProps> = ({text}) => {
+const Header: React.FC<HeaderProps> = ({ text }) => {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
 
   return (
     <View style={styles.header}>
       <Image
-        source={{uri: 'https://welfarecanteen.in/public/Naval.jpg'}}
+        source={require('../screens/imgs/navallogo.png')} // Adjust path to your logo
         style={styles.logo}
       />
       <Text style={styles.headerTitle}>{text}</Text>
       <View style={styles.headerIcons}>
         <TouchableOpacity
-          style={styles.iconborder}
+          style={styles.iconContainer}
           onPress={() => navigation.navigate('WalletScreen')}
         >
           <Image
-            source={require('../screens/imgs/wallet_png.png')} // Adjust path to your wallet PNG
+            source={require('../screens/imgs/wallet_png.png')} // Adjust path to your wallet icon
             style={styles.icon}
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.iconborder}
+          style={styles.iconContainer}
           onPress={() => navigation.navigate('SettingsScreen')}
         >
           <Image
-            source={require('../screens/imgs/1077114.png')} // Adjust path to your profile PNG
+            source={require('../screens/imgs/1077114.png')} // Adjust path to your profile icon
             style={styles.icon}
           />
         </TouchableOpacity>
@@ -56,40 +56,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0014A8',
-    paddingVertical: hp('2.5%'),
-    paddingHorizontal: wp('7%'),
-    borderBottomLeftRadius: wp('5%'),
-    borderBottomRightRadius: wp('5%'),
+    backgroundColor: '#0014A8', // Original dark blue background
+    paddingVertical: hp('0.7%'),
+    paddingHorizontal: wp('5%'),
+    borderBottomLeftRadius: wp('4%'),
+    borderBottomRightRadius: wp('4%'),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
   logo: {
-    width: 38,
-    height: 38,
-    marginRight: 10,
-    borderRadius: 8,
-    backgroundColor: '#fff',
+    width: wp('18%'), // Larger logo for prominence
+    height: wp('18%'),
+    resizeMode: 'contain',
   },
-
   headerTitle: {
     color: '#fff',
-    fontSize: wp('5%'),
-    fontWeight: 'bold',
+    fontSize: wp('4%'), // Responsive font size
+    fontWeight: '700',
+    flex: 1, // Allow title to take available space
+    textAlign: 'center',
   },
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconborder: {
+  iconContainer: {
     backgroundColor: '#fff',
     borderRadius: wp('50%'),
     padding: wp('2%'),
-    marginLeft: wp('2.5%'),
+    marginLeft: wp('2%'),
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   icon: {
-    width: wp('7%'),
-    height: wp('7%'),
+    width: wp('5%'), // Consistent icon size
+    height: wp('5%'),
+    resizeMode: 'contain',
   },
 });
 
