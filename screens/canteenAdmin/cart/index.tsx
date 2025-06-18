@@ -17,6 +17,7 @@ import { cartScreenProps } from '../types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { API_BASE_URL } from '../../services/restApi';
 type CartScreenNavigationProp = StackNavigationProp<any, any>;
 
 const CartScreen: React.FC<{ navigation: CartScreenNavigationProp }> = ({ navigation }) => {
@@ -46,7 +47,6 @@ const CartScreen: React.FC<{ navigation: CartScreenNavigationProp }> = ({ naviga
         try {
             setUpdatingItems(prev => [...prev, cartItem.id]);
             const token = await AsyncStorage.getItem('authorization');
-            const API_BASE_URL = 'https://server.welfarecanteen.in/api';
 
             await axios.post(`${API_BASE_URL}/cart/updateCartItem`, {
                 cartItemId: cartItem.item?.id,

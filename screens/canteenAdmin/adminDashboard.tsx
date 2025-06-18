@@ -16,6 +16,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigationTypes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenParams } from './menu/types';
+import { API_BASE_URL } from '../services/restApi';
 
 type AdminDashboardNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -43,7 +44,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const token = await AsyncStorage.getItem('authorization');
-      const response = await fetch('https://server.welfarecanteen.in/api/adminDasboard/dashboard', {
+      const response = await fetch(`${API_BASE_URL}/adminDasboard/dashboard`, {
         headers: {
           'Authorization': token || '',
         },

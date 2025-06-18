@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from './navigationTypes';
+import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from './navigationTypes';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -17,21 +17,22 @@ interface HeaderProps {
   text: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ text }) => {
+const Header: React.FC<HeaderProps> = ({text}) => {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
 
   return (
     <View style={styles.header}>
-      <Image
-        source={require('../screens/imgs/navallogo.png')} // Adjust path to your logo
-        style={styles.logo}
-      />
+      <TouchableOpacity onPress={() => navigation.navigate('SelectCanteen')}>
+        <Image
+          source={require('../screens/imgs/navallogo.png')} // Adjust path to your logo
+          style={styles.logo}
+        />
+      </TouchableOpacity>
       <Text style={styles.headerTitle}>{text}</Text>
       <View style={styles.headerIcons}>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate('WalletScreen')}
-        >
+          onPress={() => navigation.navigate('WalletScreen')}>
           <Image
             source={require('../screens/imgs/wallet_png.png')} // Adjust path to your wallet icon
             style={styles.icon}
@@ -39,8 +40,7 @@ const Header: React.FC<HeaderProps> = ({ text }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate('SettingsScreen')}
-        >
+          onPress={() => navigation.navigate('SettingsScreen')}>
           <Image
             source={require('../screens/imgs/1077114.png')} // Adjust path to your profile icon
             style={styles.icon}
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: wp('4%'),
     borderBottomRightRadius: wp('4%'),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 5,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,

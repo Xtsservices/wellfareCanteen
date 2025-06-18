@@ -22,6 +22,7 @@ type MenuItemsByMenuIdScreenNavigationProp = StackNavigationProp<
 >;
 
 import {RouteProp} from '@react-navigation/native';
+import { API_BASE_URL } from './services/restApi';
 
 type MenuItemsByMenuIdScreenRouteProp = RouteProp<
   RootStackParamList,
@@ -89,7 +90,7 @@ const MenuItemsByMenuIdScreen = () => {
         }
 
         const response = await axios.get(
-          `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
+          `${API_BASE_URL}/api/menu/getMenuById?id=${menuId}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ const MenuItemsByMenuIdScreen = () => {
       };
 
       const response = await axios.post(
-        'https://server.welfarecanteen.in/api/cart/add',
+        `${API_BASE_URL}/api/cart/add`,
         payload,
         {
           headers: {
@@ -181,7 +182,7 @@ const MenuItemsByMenuIdScreen = () => {
       console.log(response, 'response');
 
       const cartDataResponse = await axios.get(
-        'https://server.welfarecanteen.in/api/cart/getCart',
+        `${API_BASE_URL}/api/cart/getCart`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -271,7 +272,7 @@ const MenuItemsByMenuIdScreen = () => {
 
       // Fetch the cart to get the correct cartItemId for this item
       const cartResponse = await axios.get(
-        'https://server.welfarecanteen.in/api/cart/getCart',
+        `${API_BASE_URL}/api/cart/getCart`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -295,7 +296,7 @@ const MenuItemsByMenuIdScreen = () => {
       console.log(payload, 'payload');
 
       const response = await axios.post(
-        'https://server.welfarecanteen.in/api/cart/updateCartItem',
+        `${API_BASE_URL}/api/cart/updateCartItem`,
         payload,
         {
           headers: {
@@ -337,7 +338,7 @@ const MenuItemsByMenuIdScreen = () => {
         };
 
         const response = await axios.post(
-          'https://server.welfarecanteen.in/api/cart/removeCartItem',
+          `${API_BASE_URL}/api/cart/removeCartItem`,
           payload,
           {
             headers: {
@@ -377,7 +378,7 @@ const MenuItemsByMenuIdScreen = () => {
         };
 
         const response = await axios.post(
-          'https://server.welfarecanteen.in/api/cart/updateCartItem',
+          `${API_BASE_URL}/api/cart/updateCartItem`,
           payload,
           {
             headers: {

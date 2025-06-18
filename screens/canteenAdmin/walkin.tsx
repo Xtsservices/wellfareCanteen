@@ -14,6 +14,7 @@ import {
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigationTypes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../services/restApi';
 
 const { width } = Dimensions.get('window');
 
@@ -104,7 +105,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
           return;
         }
         const response = await fetch(
-          `https://server.welfarecanteen.in/api/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=`,
+          `${API_BASE_URL}/menu/getMenusForNextTwoDaysGroupedByDateAndConfiguration?canteenId=`,
           {
             method: 'GET',
             headers: {
@@ -149,7 +150,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
       }
 
       const response = await fetch(
-        `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
+        `${API_BASE_URL}/menu/getMenuById?id=${menuId}`,
         {
           method: 'GET',
           headers: {
@@ -194,7 +195,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
       };
 
       const response = await fetch(
-        'https://server.welfarecanteen.in/api/cart/add',
+        `${API_BASE_URL}/cart/add`,
         {
           method: 'POST',
           headers: {

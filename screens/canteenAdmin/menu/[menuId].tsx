@@ -21,6 +21,7 @@ import {
 import { MenuItemDetailsProps } from './types';
 import { addItemToCart, updateCartItemQuantity, removeCartItem, findCartItemByItemId } from '../../services/cartHelpers';
 import { GiOgre } from 'react-icons/gi';
+import { API_BASE_URL } from '../../services/restApi';
 interface CartItemInfo {
   quantity: number;
   cartItemId: number | string | null | undefined;
@@ -109,7 +110,7 @@ const MenuItemDetails: React.FC<MenuItemDetailsProps> = ({ navigation }) => {
       }
 
       const response = await fetch(
-        `https://server.welfarecanteen.in/api/menu/getMenuById?id=${menuId}`,
+        `${API_BASE_URL}/menu/getMenuById?id=${menuId}`,
         {
           method: 'GET',
           headers: {

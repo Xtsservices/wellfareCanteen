@@ -12,6 +12,7 @@ import {
   CFPaymentGatewayService,
   CFErrorResponse,
 } from 'react-native-cashfree-pg-sdk';
+import { API_BASE_URL } from '../services/restApi';
 
 const PaymentScreen: React.FC = () => {
 
@@ -45,11 +46,11 @@ const PaymentScreen: React.FC = () => {
     try {
       console.log('Starting payment process...');
 // const URL = 'http://192.168.1.22:3002/api';
-        // 'https://server.welfarecanteen.in/api/paymentsdk/createOrder',
+        // `${API_BASE_URL}/paymentsdk/createOrder`,
 
 
       const response = await axios.post(
-        'http://192.168.1.22:3002/api/paymentsdk/createOrder',
+        `${API_BASE_URL}/paymentsdk/createOrder`,
         {
           customer_id: 'user_001',
           customer_email: 'testuser@example.com',
