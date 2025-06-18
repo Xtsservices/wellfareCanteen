@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import {Login, ResendOtp, VerifyOtp} from './services/restApi';
 import {jwtDecode} from 'jwt-decode';
+import {useDispatch} from 'react-redux';
 
 type RootStackParamList = {
   SelectCanteen: undefined;
@@ -40,6 +41,7 @@ const LoginScreen = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<NavigationProp>();
+  const dispatch = useDispatch();
 
   const otpInputs = useRef<Array<TextInput | null>>([]);
 
@@ -172,8 +174,8 @@ const LoginScreen = () => {
         showToast('success', 'OTP verified successfully.');
         await AsyncStorage.setItem('authorization', data.token);
         await AsyncStorage.setItem('phoneNumber', phoneNumber);
-        console.log('Token:', data.token);
-        console.log('Phone Number:', phoneNumber);
+        dispatch({type: 'currentUserData', payload: data.data});
+
         navigation.navigate('SelectCanteen');
       } else {
         showToast('error', `Invalid OTP: ${data.message || 'Try again.'}`);

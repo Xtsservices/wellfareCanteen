@@ -1,284 +1,189 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Image,
   ScrollView,
+  Dimensions,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
+import Header from './header';
 
-const ProfileScreen = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+// Define interfaces for TypeScript
+interface UserData {
+  firstName?: string | null;
+  lastName?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  createdAt?: string | null;
+  id?: number;
+  profileImage?: string | null;
+}
 
-  // Handle logout
-  const handleLogout = async () => {
-    setIsLoggedIn(false);
-    console.log('User logged out');
-    await AsyncStorage.removeItem('authorization');
-    await AsyncStorage.removeItem('phoneNumber');
+interface AppState {
+  currentUserData: UserData;
+}
+
+// Get screen dimensions for responsiveness
+const { width } = Dimensions.get('window');
+const formWidth = width * 0.9; // 90% of screen width
+const fullInputWidth = formWidth * 0.95;
+
+const ProfileScreen: React.FC = () => {
+  const user = useSelector((state: AppState) => state.currentUserData);
+
+  // Format createdAt date to a readable format (e.g., "June 13, 2025")
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
+  // Render N/A if data is not available
+  const renderValue = (value?: string | null) => (
+    <Text style={styles.naText}>{value || 'N/A'}</Text>
+  );
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Profile Image */}
-      <View style={styles.imageContainer}>
-        <Image
-          style={styles.image}
-          source={{uri: 'https://example.com/profile.jpg'}}
-        />
-      </View>
+    <View style={styles.mainContainer}>
+      {/* Header */}
+      <Header text="Profile" />
 
-      {/* Form Container */}
-      {isLoggedIn ? (
-        <View style={styles.formWrapper}>
-          <View style={styles.formContainer}>
-            <View style={styles.row}>
-              <TextInput style={styles.input} placeholder="First Name" />
-              <TextInput style={styles.input} placeholder="Last Name" />
-            </View>
-
-            <View style={styles.row}>
-              <TextInput style={styles.input} placeholder="Date Of Birth" />
-              <TextInput style={styles.input} placeholder="Gender" />
-            </View>
-
-            <TextInput
-              style={styles.inputFull}
-              placeholder="Enter your Email"
-            />
-            <TextInput
-              style={styles.inputFull}
-              placeholder="Create Password"
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.inputFull}
-              placeholder="Enter Aadhar card number"
-            />
-            <TextInput
-              style={styles.inputFull}
-              placeholder="Enter Pan card number"
-            />
-            <TextInput style={styles.inputFull} placeholder="Enter your ID" />
-
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleLogout}>
-              <Text style={styles.submitButtonText}>LOG OUT =========== </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.loggedOutContainer}>
-          <Text style={styles.loggedOutText}>
-            You have logged out successfully.
+      {/* Scrollable Content */}
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Profile Image */}
+        <View style={styles.imageContainer}>
+          <Image
+            style={styles.image}
+            source={
+              user?.profileImage
+                ? { uri: user.profileImage }
+                : require('./imgs/1077114.png')
+            }
+          />
+          <Text style={styles.profileName}>
+            {user?.firstName && user?.lastName
+              ? `${user.firstName} ${user.lastName}`
+              : 'User Profile'}
           </Text>
         </View>
-      )}
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        {/* <Text style={styles.footerText}>© 2025 YourApp. All rights reserved.</Text> */}
-      </View>
-    </ScrollView>
+        {/* Form Container */}
+        <View style={[styles.formWrapper, { width: formWidth }]}>
+          <View style={styles.formContainer}>
+            <View style={styles.row}>
+              <View style={[styles.input, { width: fullInputWidth }]}>
+                <Text style={styles.label}>First Name</Text>
+                {renderValue(user?.firstName)}
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.input, { width: fullInputWidth }]}>
+                <Text style={styles.label}>Last Name</Text>
+                {renderValue(user?.lastName)}
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.input, { width: fullInputWidth }]}>
+                <Text style={styles.label}>Mobile</Text>
+                {renderValue(user?.mobile)}
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.input, { width: fullInputWidth }]}>
+                <Text style={styles.label}>Email</Text>
+                {renderValue(user?.email)}
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={[styles.input, { width: fullInputWidth }]}>
+                <Text style={styles.label}>Joined</Text>
+                {renderValue(formatDate(user?.createdAt))}
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#e6f0fa', // Light blue background
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: '#f5f5f5',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   imageContainer: {
-    marginBottom: 20,
     alignItems: 'center',
+    marginBottom: 20,
   },
   image: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     resizeMode: 'cover',
     borderWidth: 3,
-    borderColor: '#fff',
-    marginBottom: 15,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000', // Black text
+    marginTop: 8,
+    textTransform: 'capitalize',
   },
   formWrapper: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    width: '100%',
-    marginTop: 20,
+    marginTop: 15,
+    alignItems: 'center',
   },
   formContainer: {
-    backgroundColor: '#000080',
-    borderRadius: 15,
-    padding: 25,
-    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 10,
-    alignItems: 'center',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    width: '100%',
+    marginBottom: 15,
   },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    flex: 1,
-    marginHorizontal: 8,
-    fontSize: 16,
-  },
-  inputFull: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 20,
-    width: '100%',
-    fontSize: 16,
-  },
-  submitButton: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#f8f9fa', // Subtle gray for input background
+    borderRadius: 12,
     padding: 15,
-    alignItems: 'center',
-    marginTop: 10,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  submitButtonText: {
-    color: '#000080',
-    fontWeight: 'bold',
-    fontSize: 18,
+  label: {
+    color: '#000', // Black color mandatory
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
-  loggedOutContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  loggedOutText: {
-    fontSize: 18,
-    color: '#888',
-    textAlign: 'center',
-  },
-  footer: {
-    marginTop: 40, // Adds space between the image and footer
-    backgroundColor: '#f5f5f5',
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 15,
-  },
-  footerText: {
-    color: '#888',
-    fontSize: 14,
+  naText: {
+    color: '#000', // Black color mandatory
+    fontSize: 16,
+    fontWeight: '400',
   },
 });
 
 export default ProfileScreen;
-
-// const styles = StyleSheet.create({
-//     container: {
-//         flexGrow: 1,
-//         backgroundColor: '#f5f5f5',
-//         alignItems: 'center',
-//         padding: 20,
-//     },
-//     formWrapper: {
-//         flex: 1,
-//         justifyContent: 'flex-start',
-//         width: '100%',
-//         marginTop: 40, // Adds space to move the form down
-//     },
-//     imageContainer: {
-//         marginBottom: 20,
-//         alignItems: 'center',
-//     },
-//     image: {
-//         width: 120,
-//         height: 120,
-//         borderRadius: 60,
-//         resizeMode: 'cover',
-//         borderWidth: 3,
-//         borderColor: '#fff',
-//         marginBottom: 15,
-//     },
-//     formContainer: {
-//         backgroundColor: '#ffffff',
-//         borderRadius: 15,
-//         padding: 25,
-//         width: '100%',
-//         shadowColor: '#000',
-//         shadowOffset: { width: 0, height: 10 },
-//         shadowOpacity: 0.15,
-//         shadowRadius: 15,
-//         elevation: 10,
-//         alignItems: 'center',
-//     },
-//     row: {
-//         flexDirection: 'row',
-//         justifyContent: 'space-between',
-//         marginBottom: 20,
-//         width: '100%',
-//     },
-//     input: {
-//         backgroundColor: '#f0f0f0',
-//         borderRadius: 10,
-//         padding: 12,
-//         flex: 1,
-//         marginHorizontal: 8,
-//         fontSize: 16,
-//     },
-//     inputFull: {
-//         backgroundColor: '#f0f0f0',
-//         borderRadius: 10,
-//         padding: 12,
-//         marginBottom: 20,
-//         width: '100%',
-//         fontSize: 16,
-//     },
-//     submitButton: {
-//         backgroundColor: '#000080',
-//         borderRadius: 10,
-//         padding: 15,
-//         alignItems: 'center',
-//         marginTop: 10,
-//         width: '100%',
-//         shadowColor: '#000',
-//         shadowOffset: { width: 0, height: 3 },
-//         shadowOpacity: 0.1,
-//         shadowRadius: 8,
-//         elevation: 6,
-//     },
-//     submitButtonText: {
-//         color: '#fff',
-//         fontWeight: 'bold',
-//         fontSize: 18,
-//     },
-//     footer: {
-//         marginTop: 30, // Adds space below the form
-//         backgroundColor: '#f5f5f5',
-//         width: '100%',
-//         alignItems: 'center',
-//         paddingVertical: 15,
-//     },
-//     footerText: {
-//         color: '#888',
-//         fontSize: 14,
-//     },
-// });
-
-// export default ProfileScreen;

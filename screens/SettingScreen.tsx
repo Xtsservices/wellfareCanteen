@@ -79,28 +79,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           ) : null}
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ProfileScreen')}>
             <Image
               style={styles.profile}
               source={{ uri: 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png' }} 
             />
             <Text style={styles.menuText}>Profile</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ViewOrders')}>
             <Image
               style={styles.profile}
               source={{ uri: 'https://cdn-icons-png.freepik.com/256/754/754187.png?semt=ais_hybrid' }} 
             />
-            <Text style={styles.menuText}>Orders history</Text>
+            <Text style={styles.menuText}>Orders history </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('WalletScreen')}>
             <Image
               style={styles.profile}
               source={{ uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJQDnF4cAvtdcYSFaPGY1FmFek1kOQfCJvZA&s' }}
             />
             <Text style={styles.menuText}>Wallet</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('NotificationsScreen')}>
             <Image
               style={styles.profile}
               source={{ uri: 'https://cdn-icons-png.flaticon.com/512/565/565422.png' }}

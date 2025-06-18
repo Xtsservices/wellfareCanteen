@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import {dispatch} from '../../store/store';
 
 // Base API URL
 const API_BASE_URL = 'https://server.welfarecanteen.in/api';
@@ -29,9 +30,19 @@ export const fetchCartData = async () => {
         authorization: token,
       },
     });
-    console.log(response?.data, 'response data cart');
+    console.log(response?.data, 'response data cart=============');
 
     if (response.data && response.data.data) {
+      if (response.data && response.data.data) {
+        const cartItemsCount = response?.data?.data?.cartItems
+          ? response.data.data.cartItems.length
+          : 0;
+        dispatch({
+          type: 'myCartItems',
+          payload: cartItemsCount,
+        });
+      }
+
       return response.data.data;
     } else {
       throw new Error('No cart data found');
@@ -53,7 +64,7 @@ export const addItemToCart = async (
     const token = await getAuthToken();
     const canteenId = await AsyncStorage.getItem('canteenId');
     const date = await AsyncStorage.getItem('selectedDate');
-    console.log("datesssss", date);
+    console.log('datesssss', date);
 
     //   {
 
@@ -82,7 +93,7 @@ export const addItemToCart = async (
         authorization: token,
       },
     });
-
+    console.log('Response from addItemToCart:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error adding item to cart:', error);
@@ -178,7 +189,11 @@ export const clearCart = async () => {
         authorization: token,
       },
     });
-
+    // console.log('Response from clearCart:', response.data);
+    dispatch({
+      type: 'myCartItems',
+      payload: 0,
+    });
     return response.data;
   } catch (error) {
     console.error('Error clearing cart:', error);
