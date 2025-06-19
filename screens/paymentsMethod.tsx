@@ -280,7 +280,7 @@ const PaymentMethod: React.FC = () => {
                   }}
                   style={styles.optionIcon}
                 />
-                <Text style={styles.optionText}>Cash</Text>
+                <Text style={styles.optionText}>WC-Cash</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity
