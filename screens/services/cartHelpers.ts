@@ -23,6 +23,7 @@ export const getAuthToken = async () => {
 export const fetchCartData = async () => {
   try {
     const token = await getAuthToken();
+    console.log('response data cart======start=======/cart/getCart');
 
     const response = await axios.get(`${API_BASE_URL}/cart/getCart`, {
       headers: {
@@ -30,7 +31,7 @@ export const fetchCartData = async () => {
         authorization: token,
       },
     });
-    console.log(response?.data, 'response data cart=============');
+    console.log(response, 'response data cart =============');
 
     if (response.data && response.data.data) {
       if (response.data && response.data.data) {
@@ -48,7 +49,7 @@ export const fetchCartData = async () => {
       throw new Error('No cart data found');
     }
   } catch (error) {
-    // console.error('Error fetching cart data:', error);
+    console.error('Error fetching cart data:', error);
     throw error;
   }
 };
@@ -125,7 +126,7 @@ export const updateCartItemQuantity = async (
       quantity,
     };
 
-    console.log('Update payload:', payload);
+    console.log('Update payload:===========', payload);
 
     const response = await axios.post(
       `${API_BASE_URL}/cart/updateCartItem`,
