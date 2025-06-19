@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,18 @@ import {
   Alert,
   BackHandler,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from './navigationTypes';
-import { AllCanteens } from './services/restApi';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from './navigationTypes';
+import {AllCanteens} from './services/restApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
 import Header from './header';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 // Note: Ensure react-native-responsive-screen is installed:
 // 1. Run `npm install react-native-responsive-screen`
@@ -43,15 +46,22 @@ const SelectCanteenScreen = () => {
   const navigation = useNavigation<NavigationProp>();
 
   const fetchCanteens = async () => {
-    console.log('Fetching canteens...');
+    console.log('Fetching canteens...1');
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('authorization');
+      console.log('Fetching canteens...1', token);
+
       if (!token) return;
       const state = await NetInfo.fetch();
+      console.log('Fetching canteens...2');
+
       const response = await axios.get(AllCanteens(), {
-        headers: { Authorization: token },
+        headers: {Authorization: token},
       });
+
+      console.log('Fetching canteens...', response.data);
+
       if (response.data && response.data.data) {
         setCanteens(
           response.data.data.map((item: any) => ({
@@ -82,8 +92,8 @@ const SelectCanteenScreen = () => {
     React.useCallback(() => {
       const onBackPress = () => {
         Alert.alert('Exit App', 'Are you sure you want to exit?', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit', onPress: () => BackHandler.exitApp() },
+          {text: 'Cancel', style: 'cancel'},
+          {text: 'Exit', onPress: () => BackHandler.exitApp()},
         ]);
         return true;
       };
@@ -102,25 +112,24 @@ const SelectCanteenScreen = () => {
   const handleConfirm = () => {
     if (selectedCanteen) {
       const selectedCanteenId = canteens.find(
-        (canteen) => canteen.canteenName === selectedCanteen,
+        canteen => canteen.canteenName === selectedCanteen,
       )?.id;
       if (selectedCanteenId) {
-        navigation.navigate('Dashboard', { canteenId: selectedCanteenId });
+        navigation.navigate('Dashboard', {canteenId: selectedCanteenId});
       }
     }
   };
 
-  const renderCanteenItem = ({ item }: { item: Canteen }) => (
+  const renderCanteenItem = ({item}: {item: Canteen}) => (
     <TouchableOpacity
       style={[
         styles.canteenCard,
         selectedCanteen === item.canteenName && styles.selectedCard,
       ]}
       onPress={() => handleCanteenSelect(item.canteenName)}
-      activeOpacity={0.85}
-    >
+      activeOpacity={0.85}>
       <Image
-        source={{ uri: item.canteenImage }}
+        source={{uri: item.canteenImage}}
         style={styles.canteenImage}
         resizeMode="cover"
       />
@@ -152,13 +161,13 @@ const SelectCanteenScreen = () => {
       ) : (
         <FlatList
           data={canteens}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           renderItem={renderCanteenItem}
           numColumns={2}
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No canteens available.</Text>
+            <Text style={styles.emptyText}>No canteens available</Text>
           }
         />
       )}
@@ -218,7 +227,7 @@ const styles = StyleSheet.create({
     shadowColor: '#010080',
     shadowOpacity: 0.1,
     shadowRadius: wp('2.5%'),
-    shadowOffset: { width: 0, height: hp('0.5%') },
+    shadowOffset: {width: 0, height: hp('0.5%')},
     paddingVertical: hp('2%'),
     paddingHorizontal: wp('2%'),
     position: 'relative',
@@ -278,7 +287,7 @@ const styles = StyleSheet.create({
     shadowColor: '#010080',
     shadowOpacity: 0.15,
     shadowRadius: wp('2%'),
-    shadowOffset: { width: 0, height: hp('0.2%') },
+    shadowOffset: {width: 0, height: hp('0.2%')},
   },
   confirmButtonText: {
     color: '#fff',
