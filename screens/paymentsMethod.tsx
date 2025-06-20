@@ -204,7 +204,7 @@ const PaymentMethod: React.FC = () => {
 
       if (selectedMethod === 'wallet') {
         //it should be less than  to wallet balance
-        if (checkoutTotalBalance && walletBalance > checkoutTotalBalance) {
+        if (checkoutTotalBalance && walletBalance < checkoutTotalBalance) {
           Alert.alert(
             'Insufficient Wallet Balance',
             'Please proceed with UPI payment.',
