@@ -201,7 +201,9 @@ const CartPage: React.FC = () => {
     try {
       if (!cartData) return;
       setUpdatingItems(prev => [...prev, item.id]);
-      await removeCartItem(cartData.id, item.id);
+      // await removeCartItem(cartData.id, item.id);
+      await removeCartItem(Number(item.cartId), Number(item.itemId));
+
       await loadCartData();
     } catch (err) {
       setError('Failed to remove cart item');
