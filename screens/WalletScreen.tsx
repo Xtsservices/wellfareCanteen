@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from './navigationTypes';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from './navigationTypes';
 import Header from './header';
 import DownNavbar from './downNavbar';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { API_BASE_URL } from './services/restApi';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import {API_BASE_URL} from './services/restApi';
+import {useFocusEffect} from '@react-navigation/native';
 
-// Constants
 const COLORS = {
   PRIMARY: '#0014A8',
   TEXT_DARK: '#333',
@@ -26,7 +29,6 @@ const COLORS = {
   BORDER: '#eee',
 };
 
-// Types
 type WalletScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'WalletScreen'
@@ -46,19 +48,19 @@ interface Transaction {
   updatedAt: number;
 }
 
-const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
-  const [showAll, setShowAll] = useState(false);
+const WalletScreen: React.FC<WalletScreenProps> = ({navigation}) => {
+  const [showAll, setShowAll] = useState<boolean>(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState<boolean>(true);
 
   const fetchWalletData = useCallback(async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('authorization');
       if (!token) {
-        throw new Error('No authentication token found');
+        console.error('No authentication token found');
+        return;
       }
 
       const headers = {
@@ -66,33 +68,38 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
         Authorization: token,
       };
 
-      const [transRes, balanceRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/order/getWalletTransactions`, { headers }),
-        fetch(`${API_BASE_URL}/order/getWalletBalance`, { headers }),
-      ]);
+      const res = await fetch(`${API_BASE_URL}/order/getWalletTransactions`, {
+        headers,
+      });
 
-      if (!transRes.ok || !balanceRes.ok) {
-        throw new Error('Failed to fetch wallet data');
+      if (!res.ok) {
+        console.error('Failed to fetch wallet data');
+        return;
       }
 
-      const transJson = await transRes.json();
-      const balanceJson = await balanceRes.json();
+      const json = await res.json();
 
-      setTransactions(transJson.data.transactions || []);
-      setWalletBalance(balanceJson.data.walletBalance || 0);
+      const trans = json.data?.transactions || [];
+      const balance = json.data?.walletBalance || 0;
+
+      setTransactions(trans);
+      setWalletBalance(balance);
     } catch (error) {
-      setError('Failed to load wallet data');
       console.error('Error fetching wallet data:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigation]);
 
-  useEffect(() => {
-    fetchWalletData();
-  }, [fetchWalletData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchWalletData();
+    }, [fetchWalletData]),
+  );
 
   const displayedHistory = showAll ? transactions : transactions.slice(0, 4);
+
+
 
   return (
     <View style={styles.container}>
@@ -101,38 +108,43 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.PRIMARY} />
         </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchWalletData}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
       ) : (
         <>
           <View style={styles.walletCard}>
-            <Text style={styles.walletAmount}>₹ {walletBalance}</Text>
+            <Text style={styles.walletAmount}>{`₹ ${walletBalance}`}</Text>
           </View>
           <ScrollView style={styles.historySection}>
             <View style={styles.historyHeader}>
               <Text style={styles.historyTitle}>Transactions</Text>
-              <TouchableOpacity onPress={() => setShowAll(!showAll)}>
-                <Text style={styles.viewAllText}>
-                  {showAll ? 'View Less' : 'View All'}
-                </Text>
-              </TouchableOpacity>
+              {transactions.length > 4 && (
+                <TouchableOpacity onPress={() => setShowAll(!showAll)}>
+                  <Text style={styles.viewAllText}>
+                    {showAll ? 'View Less' : 'View All'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
             {transactions.length === 0 ? (
-              <Text style={styles.noTransactionsText}>No transactions found</Text>
+              <Text style={styles.noTransactionsText}>
+                No transactions found
+              </Text>
             ) : (
               <View style={styles.table}>
                 <View style={[styles.tableRow, styles.tableHeader]}>
-                  <Text style={[styles.tableCell, styles.headerCell]}>Type</Text>
-                  <Text style={[styles.tableCell, styles.headerCell]}>Amount</Text>
-                  <Text style={[styles.tableCell, styles.headerCell]}>Reference</Text>
-                  <Text style={[styles.tableCell, styles.headerCell]}>Date</Text>
+                  <Text style={[styles.tableCell, styles.headerCell]}>
+                    Type
+                  </Text>
+                  <Text style={[styles.tableCell, styles.headerCell]}>
+                    Amount
+                  </Text>
+                  <Text style={[styles.tableCell, styles.headerCell]}>
+                    Reference
+                  </Text>
+                  <Text style={[styles.tableCell, styles.headerCell]}>
+                    Date
+                  </Text>
                 </View>
-                {displayedHistory.map(item => (
+                {displayedHistory.map((item: Transaction) => (
                   <View key={item.id} style={styles.tableRow}>
                     <Text style={styles.tableCell}>{item.type}</Text>
                     <Text style={styles.tableCell}>₹{item.amount}</Text>
@@ -148,7 +160,7 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ navigation }) => {
           <View style={styles.footer}>
             <Text style={styles.footerText}>proposed by</Text>
             <Image
-              source={{ uri: 'https://watabix.com/assets/logo.png' }}
+              source={{uri: 'https://watabix.com/assets/logo.png'}}
               style={styles.footerLogo}
             />
           </View>
@@ -168,31 +180,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: wp('5%'),
-  },
-  errorText: {
-    color: '#ff4d4d',
-    fontSize: wp('4%'),
-    fontWeight: 'bold',
-    marginBottom: hp('2%'),
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: wp('2%'),
-    paddingVertical: hp('1.2%'),
-    paddingHorizontal: wp('6%'),
-    alignItems: 'center',
-  },
-  retryButtonText: {
-    color: COLORS.BACKGROUND,
-    fontSize: wp('3.8%'),
-    fontWeight: 'bold',
   },
   walletCard: {
     margin: wp('4%'),

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,15 @@ import {
   ScrollView,
   BackHandler,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 import Header from './header';
 import DownNavbar from './downNavbar';
+import {API_BASE_URL} from './services/restApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
 const COLORS = {
@@ -30,41 +35,73 @@ type RootStackParamList = {
   PaymentMethod: undefined;
   ViewOrders: undefined;
   Splash: undefined;
-  PaymentStatusScreen: { status: 'success' | 'failure'; orderData?: any; error?: any };
+  PaymentStatusScreen: {
+    status: 'success' | 'failure';
+    orderData?: any;
+    error?: any;
+  };
 };
 
 type NavigationProp = {
   navigate: (screen: keyof RootStackParamList) => void;
   replace: (screen: keyof RootStackParamList) => void;
-  canGoBack: () => boolean;
-  addListener: (event: string, callback: (e: any) => void) => () => void;
 };
-
-// Remove this custom RouteProp type, we'll use the one from @react-navigation/native
 
 const PaymentStatusScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProp<RootStackParamList, 'PaymentStatusScreen'>>();
-  const { status, orderData, error } = route.params;
+  const route =
+    useRoute<RouteProp<RootStackParamList, 'PaymentStatusScreen'>>();
+  const {status, orderData, error} = route.params;
 
-  // Handle hardware back button
+  console.log('status:=========', status);
+  console.log('orderData:==========', orderData);
+
+  useEffect(() => {
+    const placeOrder = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authorization');
+
+        if (!token) return;
+        const response = await fetch(`${API_BASE_URL}/order/placeOrder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+          body: JSON.stringify({paymentMethod: ['online'], platform: 'mobile'}),
+        });
+        console.log(
+          'Order placement response==============================:',
+          response.status,
+        );
+        // Optionally handle response here
+        // const data = await response.json();
+        // console.log('Order placed:', data);
+      } catch (err) {
+        console.error('Order placement failed:', err);
+      }
+    };
+
+    if (status === 'success') {
+      placeOrder();
+    }
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Prevent hardware back button navigation
   useEffect(() => {
     const backAction = () => {
-      // Optionally, you can add custom logic here if needed
-      return true; // Prevent default back action
+      return true; // Prevent default back navigation
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-      e.preventDefault();
-      backAction();
-    });
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
 
-    return () => {
-      backHandler.remove();
-      unsubscribe();
-    };
-  }, [navigation]);
+    return () => backHandler.remove();
+  }, []);
 
   const handleContinue = () => {
     navigation.replace('ViewOrders');
@@ -76,7 +113,9 @@ const PaymentStatusScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header text={status === 'success' ? 'Payment Successful' : 'Payment Failed'} />
+      <Header
+        text={status === 'success' ? 'Payment Successful' : 'Payment Failed'}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.statusContainer}>
           <Image
@@ -105,7 +144,9 @@ const PaymentStatusScreen: React.FC = () => {
               {orderData.totalAmount && (
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Total Amount:</Text>
-                  <Text style={styles.detailValue}>₹{orderData.totalAmount}</Text>
+                  <Text style={styles.detailValue}>
+                    ₹{orderData.totalAmount}
+                  </Text>
                 </View>
               )}
               {orderData.status && (
@@ -135,12 +176,14 @@ const PaymentStatusScreen: React.FC = () => {
           <TouchableOpacity
             style={[
               styles.actionButton,
-              { backgroundColor: status === 'success' ? COLORS.PRIMARY : COLORS.ERROR },
+              {
+                backgroundColor:
+                  status === 'success' ? COLORS.PRIMARY : COLORS.ERROR,
+              },
             ]}
-            onPress={status === 'success' ? handleContinue : handleRetry}
-          >
+            onPress={status === 'success' ? handleContinue : handleRetry}>
             <Text style={styles.actionButtonText}>
-              {status === 'success' ? 'View Orders' : 'Retry Payment'}
+              {status === 'success' ? 'View Order' : 'Retry Payment'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -169,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
     shadowColor: COLORS.PRIMARY,
-    shadowOffset: { width: 0, height: hp('0.2%') },
+    shadowOffset: {width: 0, height: hp('0.2%')},
     shadowOpacity: 0.08,
     shadowRadius: wp('1.5%'),
   },

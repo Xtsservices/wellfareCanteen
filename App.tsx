@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {useState, useEffect} from 'react';
-import {AppState} from 'react-native';
+import {AppState, AppStateStatus} from 'react-native';
 import ProfileScreen from './screens/profileScreen';
 import HomePage from './screens/homepage';
 import {NavigationContainer} from '@react-navigation/native';
@@ -45,6 +45,9 @@ import PaymentStatusScreen from './screens/PaymentStatusScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+
+
+
 // Modified clearCache function using RNFS consistently for RNFS.CachesDirectoryPath
 const clearAppFileSystemCache = async () => {
   try {
@@ -65,64 +68,138 @@ const clearAppFileSystemCache = async () => {
     console.error('Error clearing app file system cache:', error);
   }
 };
-
 const App = () => {
-  const [initialRoute, setInitialRoute] = useState<
-    keyof RootStackParamList | null
-  >(null);
+
+
+
+  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
   const [appKey, setAppKey] = useState(0); // Key to force re-render
+  const navigationRef = React.useRef<any>(null); // Reference to navigation container
+  const lastAppState = React.useRef(AppState.currentState); // Track last app state
 
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (nextAppState === 'active') {
-        // Trigger any necessary updates when the app becomes active
-        console.log('App has come to the foreground');
+  const checkToken = async (currentRoute?: string) => {
+    try {
+      // If the current route is PaymentStatusScreen, preserve it
+      if (currentRoute === 'PaymentStatusScreen') {
+        setInitialRoute('PaymentStatusScreen');
+        return;
       }
-    });
 
-    return () => subscription.remove(); // Cleanup on unmount
-  }, []);
-  
-
-  useEffect(() => {
-    const checkToken = async () => {
-      try {
-        const token = await AsyncStorage.getItem('authorization');
-        if (token) {
-          setInitialRoute('Splash');
-        } else {
-          setInitialRoute('Home');
-        }
-      } catch (error) {
-        console.error('Error checking token:', error);
+      const token = await AsyncStorage.getItem('authorization');
+      if (token) {
+        setInitialRoute('Splash');
+      } else {
         setInitialRoute('Home');
       }
-    };
-    checkToken();
-  }, [appKey]); // Re-run when appKey changes
+    } catch (error) {
+      console.error('Error checking token:', error);
+      setInitialRoute('Home');
+    }
+  };
 
+  
   useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
-        setAppKey(prevKey => prevKey + 1); // Increment appKey to force re-render
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (
+        lastAppState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App is coming to the foreground
+        console.log('App has come to the foreground');
+
+        // Get the current route name
+        const currentRoute =
+          navigationRef.current?.getCurrentRoute()?.name;
+
+        // Check token only if not on PaymentStatusScreen
+        await checkToken(currentRoute);
+
+        // Increment appKey to force re-render only if needed
+        if (currentRoute || currentRoute !== PaymentStatusScreen) {
+          setAppKey(prevKey => prevKey + 1);
+        }
       } else if (nextAppState === 'inactive' || nextAppState === 'background') {
-        clearAppFileSystemCache(); // Clear cache when the app goes to the background or is closed
+        console.log('App has gone to background or is inactive');
+        await clearAppFileSystemCache(); // Clear cache
       }
+
+      lastAppState.current = nextAppState;
     };
 
-    const subscription = AppState.addEventListener(
-      'change',
-      handleAppStateChange,
-    );
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Initial token check on mount
+    checkToken();
 
     return () => {
-      subscription.remove(); // Clean up the event listener
+      subscription.remove();
     };
   }, []);
 
   if (initialRoute === null) {
-    return null; // or a loading spinner
+    return null; // Placeholder for loading state
   }
+
+
+
+
+
+  // const [initialRoute, setInitialRoute] = useState<
+  //   keyof RootStackParamList | null
+  // >(null);
+  // const [appKey, setAppKey] = useState(0); // Key to force re-render
+
+  // useEffect(() => {
+  //   const subscription = AppState.addEventListener('change', nextAppState => {
+  //     if (nextAppState === 'active') {
+  //       // Trigger any necessary updates when the app becomes active
+  //       console.log('App has come to the foreground');
+  //     }
+  //   });
+
+  //   return () => subscription.remove(); // Cleanup on unmount
+  // }, []);
+  
+
+  // useEffect(() => {
+  //   const checkToken = async () => {
+  //     try {
+  //       const token = await AsyncStorage.getItem('authorization');
+  //       if (token) {
+  //         setInitialRoute('Splash');
+  //       } else {
+  //         setInitialRoute('Home');
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking token:', error);
+  //       setInitialRoute('Home');
+  //     }
+  //   };
+  //   checkToken();
+  // }, [appKey]); // Re-run when appKey changes
+
+  // useEffect(() => {
+  //   const handleAppStateChange = (nextAppState: string) => {
+  //     if (nextAppState === 'active') {
+  //       setAppKey(prevKey => prevKey + 1); // Increment appKey to force re-render
+  //     } else if (nextAppState === 'inactive' || nextAppState === 'background') {
+  //       clearAppFileSystemCache(); // Clear cache when the app goes to the background or is closed
+  //     }
+  //   };
+
+  //   const subscription = AppState.addEventListener(
+  //     'change',
+  //     handleAppStateChange,
+  //   );
+
+  //   return () => {
+  //     subscription.remove(); // Clean up the event listener
+  //   };
+  // }, []);
+
+  // if (initialRoute === null) {
+  //   return null; // or a loading spinner
+  // }
 
   return (
     <NavigationContainer key={appKey}>

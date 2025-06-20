@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -10,22 +10,24 @@ import {
   Alert,
   BackHandler,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 import Header from './header';
 import DownNavbar from './downNavbar';
-import { API_BASE_URL } from './services/restApi';
-import {
-  CFEnvironment,
-  CFSession,
-} from 'cashfree-pg-api-contract';
+import {API_BASE_URL} from './services/restApi';
+import {CFEnvironment, CFSession} from 'cashfree-pg-api-contract';
 import {
   CFPaymentGatewayService,
   CFErrorResponse,
 } from 'react-native-cashfree-pg-sdk';
+import {useSelector} from 'react-redux';
+import {AppState} from '../store/storeTypes';
 
 // Constants
 const COLORS = {
@@ -45,7 +47,11 @@ type RootStackParamList = {
   PaymentMethod: undefined;
   ViewOrders: undefined;
   Splash: undefined;
-  PaymentStatusScreen: { status: 'success' | 'failure'; orderData?: any; error?: CFErrorResponse };
+  PaymentStatusScreen: {
+    status: 'success' | 'failure';
+    orderData?: any;
+    error?: CFErrorResponse;
+  };
 };
 
 type NavigationProp = {
@@ -62,6 +68,10 @@ const PaymentMethod: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [orderResponse, setOrderResponse] = useState<any>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const checkoutTotalBalance = useSelector(
+    (state: AppState) => state.checkoutTotalBalance,
+  );
 
   // Handle hardware back button
   useEffect(() => {
@@ -80,7 +90,10 @@ const PaymentMethod: React.FC = () => {
       return true;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
     const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
       if (loading || showOrderDetails) {
         e.preventDefault();
@@ -96,6 +109,9 @@ const PaymentMethod: React.FC = () => {
 
   // Set up Cashfree callback
   useEffect(() => {
+    // Fetch wallet balance on mount
+    fetchWalletData();
+
     CFPaymentGatewayService.setCallback({
       onVerify: (orderID: string) => {
         console.log('✅ Order verified:', orderID);
@@ -104,9 +120,11 @@ const PaymentMethod: React.FC = () => {
           text1: `Payment Verified: ${orderID}`,
         });
         // Navigate to PaymentStatusScreen with success status
-        navigation.replace('PaymentStatusScreen', {
+        console.log('PaymentStatusScreen===========');
+
+        navigation.navigate('PaymentStatusScreen', {
           status: 'success',
-          orderData: { id: orderID },
+          orderData: {id: orderID},
         });
       },
       onError: (error: CFErrorResponse, orderID: string) => {
@@ -120,7 +138,7 @@ const PaymentMethod: React.FC = () => {
         // Navigate to PaymentStatusScreen with failure status
         navigation.replace('PaymentStatusScreen', {
           status: 'failure',
-          orderData: { id: orderID },
+          orderData: {id: orderID},
           error,
         });
       },
@@ -130,6 +148,36 @@ const PaymentMethod: React.FC = () => {
       CFPaymentGatewayService.removeCallback();
     };
   }, [navigation]);
+
+  const fetchWalletData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authorization');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: token,
+      };
+
+      const [balanceRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/order/getWalletBalance`, {headers}),
+      ]);
+
+      if (!balanceRes.ok) {
+        console.error('Failed to fetch wallet data');
+        return;
+      }
+
+      const balanceJson = await balanceRes.json();
+
+      setWalletBalance(balanceJson.data.walletBalance || 0);
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+    }
+  };
 
   // Handle payment with Cashfree SDK or cash
   const handlePayment = useCallback(async () => {
@@ -146,14 +194,32 @@ const PaymentMethod: React.FC = () => {
         return;
       }
 
-      if (selectedMethod === 'Cash') {
+      // wallet payment if cash then check wallet balance
+      console.log('walletBalance0', walletBalance);
+      console.log('checkoutTotalBalance2', checkoutTotalBalance);
+      console.log(
+        'walletBalance > checkoutTotalBalance',
+        walletBalance > checkoutTotalBalance,
+      );
+
+      if (selectedMethod === 'wallet') {
+        //it should be less than  to wallet balance
+        if (checkoutTotalBalance && walletBalance > checkoutTotalBalance) {
+          Alert.alert(
+            'Insufficient Wallet Balance',
+            'Please proceed with UPI payment.',
+          );
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(`${API_BASE_URL}/order/placeOrder`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             authorization: token,
           },
-          body: JSON.stringify({ paymentMethod: 'Cash' }),
+          body: JSON.stringify({paymentMethod: ['wallet']}),
         });
         const data = await response.json();
         if (response.ok && data.data) {
@@ -187,10 +253,10 @@ const PaymentMethod: React.FC = () => {
             'Content-Type': 'application/json',
             authorization: token,
           },
-        }
+        },
       );
 
-      const { payment_session_id, order_id } = response.data;
+      const {payment_session_id, order_id} = response.data;
 
       if (!payment_session_id || !order_id) {
         throw new Error('Missing payment_session_id or order_id');
@@ -199,7 +265,7 @@ const PaymentMethod: React.FC = () => {
       const session = new CFSession(
         payment_session_id,
         order_id,
-        CFEnvironment.SANDBOX // TODO: Use CFEnvironment.PRODUCTION in production
+        CFEnvironment.SANDBOX, // TODO: Use CFEnvironment.PRODUCTION in production
       );
 
       console.log('⚡ Initiating Web Checkout with session:', session);
@@ -247,7 +313,9 @@ const PaymentMethod: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header text={orderResponse ? 'Order Details' : 'Choose Payment Method'} />
+      <Header
+        text={orderResponse ? 'Order Details' : 'Choose Payment Method'}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {!orderResponse ? (
           <>
@@ -257,8 +325,7 @@ const PaymentMethod: React.FC = () => {
                   styles.option,
                   selectedMethod === 'online' && styles.optionSelected,
                 ]}
-                onPress={() => setSelectedMethod('online')}
-              >
+                onPress={() => setSelectedMethod('online')}>
                 <Image
                   source={{
                     uri: 'https://cdn.zeebiz.com/sites/default/files/2024/01/03/274966-upigpay.jpg',
@@ -270,27 +337,25 @@ const PaymentMethod: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.option,
-                  selectedMethod === 'Cash' && styles.optionSelected,
+                  selectedMethod === 'wallet' && styles.optionSelected,
                 ]}
-                onPress={() => setSelectedMethod('Cash')}
-              >
+                onPress={() => setSelectedMethod('wallet')}>
                 <Image
                   source={{
                     uri: 'https://cdn-icons-png.flaticon.com/512/2331/2331940.png',
                   }}
                   style={styles.optionIcon}
                 />
-                <Text style={styles.optionText}>WC-Cash</Text>
+                <Text style={styles.optionText}>WC-Wallet</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity
               style={[
                 styles.payButton,
-                { opacity: loading || !selectedMethod ? 0.5 : 1 },
+                {opacity: loading || !selectedMethod ? 0.5 : 1},
               ]}
               onPress={handlePayment}
-              disabled={loading || !selectedMethod}
-            >
+              disabled={loading || !selectedMethod}>
               <Text style={styles.payButtonText}>
                 {loading ? 'Processing...' : 'Pay Now'}
               </Text>
@@ -304,7 +369,9 @@ const PaymentMethod: React.FC = () => {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Total Amount:</Text>
-              <Text style={styles.detailValue}>₹{orderResponse.totalAmount}</Text>
+              <Text style={styles.detailValue}>
+                ₹{orderResponse.totalAmount}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Status:</Text>
@@ -324,8 +391,7 @@ const PaymentMethod: React.FC = () => {
             </View>
             <TouchableOpacity
               style={styles.orderDetailsButton}
-              onPress={handleOrderDetails}
-            >
+              onPress={handleOrderDetails}>
               <Text style={styles.orderDetailsButtonText}>View All Orders</Text>
             </TouchableOpacity>
           </View>
@@ -369,7 +435,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
     shadowColor: COLORS.PRIMARY,
-    shadowOffset: { width: 0, height: hp('0.2%') },
+    shadowOffset: {width: 0, height: hp('0.2%')},
     shadowOpacity: 0.08,
     shadowRadius: wp('1%'),
   },
@@ -410,7 +476,7 @@ const styles = StyleSheet.create({
     marginVertical: hp('2%'),
     elevation: 2,
     shadowColor: COLORS.PRIMARY,
-    shadowOffset: { width: 0, height: hp('0.2%') },
+    shadowOffset: {width: 0, height: hp('0.2%')},
     shadowOpacity: 0.08,
     shadowRadius: wp('1.5%'),
   },

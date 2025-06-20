@@ -15,11 +15,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { MenuDetails, CartData, CartItemsState, MenuItem, MenuItemDetailsScreenRouteProp } from './types';
 import {
-  formatTime,
-  fetchCartData,
+  formatTime
 } from './cartUtils';
 import { MenuItemDetailsProps } from './types';
-import { addItemToCart, updateCartItemQuantity, removeCartItem, findCartItemByItemId } from '../../services/cartHelpers';
+import { addItemToCart, updateCartItemQuantity, removeCartItem, findCartItemByItemId, fetchCartData } from '../../services/cartHelpers';
 import { GiOgre } from 'react-icons/gi';
 import { API_BASE_URL } from '../../services/restApi';
 interface CartItemInfo {
