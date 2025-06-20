@@ -1,9 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {dispatch} from '../../store/store';
-import { API_BASE_URL } from './restApi';
-
-
+import {API_BASE_URL} from './restApi';
 
 // Get authorization token
 export const getAuthToken = async () => {
@@ -31,7 +29,7 @@ export const fetchCartData = async () => {
         authorization: token,
       },
     });
-    console.log(response, 'response data cart =============');
+    console.log('fetchCartData==stand', response);
 
     if (response.data && response.data.data) {
       if (response.data && response.data.data) {
@@ -43,13 +41,29 @@ export const fetchCartData = async () => {
           payload: cartItemsCount,
         });
       }
+      console.log(
+        'fetchCartData==stand=====================',
+        response.data.data,
+      );
+      // ✅ Corrected this line
 
-      return response.data.data;
+      const orders = response.data.data;
+      if (orders.cartItems) {
+        orders.cartItems.sort(
+          (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+      }
+
+      return orders;
     } else {
+      dispatch({
+        type: 'myCartItems',
+        payload: 0,
+      });
       throw new Error('No cart data found');
     }
   } catch (error) {
-    console.error('Error fetching cart data:', error);
+    console.error('Error fetching cart data:carthelpers', error);
     throw error;
   }
 };
@@ -138,7 +152,7 @@ export const updateCartItemQuantity = async (
         },
       },
     );
-
+    console.log('Response from updateCartItemQuantity:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error updating cart item quantity:=====', error);
@@ -173,7 +187,7 @@ export const removeCartItem = async (
         },
       },
     );
-console.log('Response from removeCartItem:', response.data);
+    console.log('Response from removeCartItem:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error removing cart item:', error);
@@ -225,14 +239,11 @@ export const findCartItemByItemId = (
 export const fetchDashboardData = async () => {
   try {
     const token = await AsyncStorage.getItem('authorization');
-    const response = await fetch(
-      `${API_BASE_URL}/adminDasboard/dashboard`,
-      {
-        headers: {
-          Authorization: token || '',
-        },
+    const response = await fetch(`${API_BASE_URL}/adminDasboard/dashboard`, {
+      headers: {
+        Authorization: token || '',
       },
-    );
+    });
     return await response.json();
   } catch (error) {
     console.error('API Error:', error);

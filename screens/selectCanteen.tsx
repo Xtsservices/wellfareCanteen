@@ -150,7 +150,6 @@ const SelectCanteenScreen = () => {
       <Header text="Welfare Canteen" />
 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Select Your Canteen</Text>
         <Text style={styles.headerSubtitle}>Click To Use</Text>
       </View>
 

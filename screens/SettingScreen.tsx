@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   Image,
   View,
@@ -6,13 +6,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from './navigationTypes';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from './navigationTypes';
 import Header from './header';
 import DownNavbar from './downNavbar';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 // Constants
 const COLORS = {
@@ -36,92 +41,100 @@ interface SettingsScreenProps {
   navigation: SettingsScreenNavigationProp;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [error, setError] = useState('');
+const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
 
   const handleLogout = useCallback(async () => {
     try {
       await Promise.all([
         AsyncStorage.removeItem('authorization'),
         AsyncStorage.removeItem('phoneNumber'),
+        AsyncStorage.removeItem('canteenId'),
+        AsyncStorage.removeItem('selectedDate'),
+        AsyncStorage.removeItem('cartId'),
+        AsyncStorage.removeItem('itemId'),
+        AsyncStorage.removeItem('cartId'),
       ]);
       setIsLoggedIn(false);
       navigation.replace('Login');
     } catch (e) {
-      setError('Failed to log out. Please try again.');
       console.error('Logout error:', e);
     }
   }, [navigation]);
 
+  const confirmLogout = useCallback(() => {
+    Alert.alert(
+      'Confirm Logout',
+      'Do you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: handleLogout,
+        },
+      ],
+      {cancelable: true},
+    );
+  }, [handleLogout]);
+
   if (!isLoggedIn) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <Header text="Settings" />
         <View style={styles.loggedOutContainer}>
-          <Text style={styles.loggedOutText}>User is logged out. Please log in again.</Text>
+          <Text style={styles.loggedOutText}>
+            User is logged out. Please log in again.
+          </Text>
         </View>
         <DownNavbar style={styles.stckyNavbar} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header text="Settings" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View>
-          {error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={() => setError('')}>
-                <Text style={styles.retryButtonText}>Dismiss</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ProfileScreen')}>
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ViewOrders')}>
             <Image
               style={styles.profile}
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png' }} 
+              source={{
+                uri: 'https://cdn-icons-png.freepik.com/256/754/754187.png?semt=ais_hybrid',
+              }}
             />
-            <Text style={styles.menuText}>Profile</Text>
+            <Text style={styles.menuText}>Orders history</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ViewOrders')}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('WalletScreen')}>
             <Image
               style={styles.profile}
-              source={{ uri: 'https://cdn-icons-png.freepik.com/256/754/754187.png?semt=ais_hybrid' }} 
-            />
-            <Text style={styles.menuText}>Orders history </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('WalletScreen')}>
-            <Image
-              style={styles.profile}
-              source={{ uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJQDnF4cAvtdcYSFaPGY1FmFek1kOQfCJvZA&s' }}
+              source={{
+                uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJQDnF4cAvtdcYSFaPGY1FmFek1kOQfCJvZA&s',
+              }}
             />
             <Text style={styles.menuText}>Wallet</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('NotificationsScreen')}>
-            <Image
-              style={styles.profile}
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/565/565422.png' }}
-            />
-            <Text style={styles.menuText}>Notifications</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            {/* <Image
-              style={styles.profile}
-              source={require('../assets/icons/logout.png')} // Replace with local asset
-            /> */}
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
         </View>
+      </ScrollView>
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity onPress={confirmLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
         <View style={styles.footer}>
           <Text style={styles.footerText}>Powered By</Text>
           <Text style={styles.footerLogo}>WorldTek.in</Text>
         </View>
-      </ScrollView>
+      </View>
       <DownNavbar style={styles.stckyNavbar} />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -141,34 +154,13 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_DARK,
     textAlign: 'center',
   },
-  errorContainer: {
-    backgroundColor: '#ffe6e6',
-    padding: wp('3%'),
-    borderRadius: wp('2%'),
-    marginBottom: hp('2%'),
-    alignItems: 'center',
-  },
-  errorText: {
-    color: COLORS.ERROR,
-    fontSize: wp('3.5%'),
-    fontWeight: '500',
-    marginBottom: hp('1%'),
-  },
-  retryButton: {
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: wp('1.5%'),
-    paddingVertical: hp('0.8%'),
-    paddingHorizontal: wp('4%'),
-  },
-  retryButtonText: {
-    color: COLORS.BACKGROUND,
-    fontSize: wp('3.5%'),
-    fontWeight: 'bold',
-  },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'space-between',
     padding: wp('4%'),
+    paddingBottom: hp('20%'), // Ensure space for bottom container
+  },
+  menuContainer: {
+    flex: 1,
   },
   menuItem: {
     flexDirection: 'row',
@@ -191,28 +183,32 @@ const styles = StyleSheet.create({
     flex: 1,
     color: COLORS.TEXT_DARK,
   },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: hp('8%'), // Position above navbar
+    left: 0,
+    right: 0,
+    paddingHorizontal: wp('4%'),
+    backgroundColor: COLORS.BACKGROUND,
+  },
   logoutButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     padding: wp('4%'),
     borderRadius: wp('2.5%'),
-    marginTop: hp('4%'),
-    marginBottom: hp('3%'),
     borderColor: COLORS.ERROR,
     borderWidth: wp('0.2%'),
     backgroundColor: COLORS.LOGOUT_BG,
+    marginBottom: hp('1%'),
   },
   logoutText: {
     color: COLORS.ERROR,
     fontSize: wp('4%'),
-    flex: 1,
     fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: hp('3%'),
-    marginBottom: hp('3%'),
+    paddingVertical: hp('1%'),
   },
   footerText: {
     fontSize: wp('3.5%'),

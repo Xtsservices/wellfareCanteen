@@ -9,48 +9,38 @@ import {
   Alert,
   PermissionsAndroid,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import DownNavbar from './downNavbar';
 import Header from './header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
-import ViewShot, { captureRef } from 'react-native-view-shot';
+import ViewShot from 'react-native-view-shot';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { API_BASE_URL } from './services/restApi';
-
-// Note: Ensure required dependencies are installed:
-// 1. Run `npm install react-native-responsive-screen react-native-view-shot @react-native-camera-roll/camera-roll axios @react-native-async-storage/async-storage`
-// 2. Ensure Header.tsx uses PNGs (wallet.png, profile.png) in src/assets/ with correct paths
-// 3. For iOS, add to Podfile: pod 'RNCameraRoll', :path => '../node_modules/@react-native-camera-roll/camera-roll'
-// 4. Run `cd ios && pod install`
-// 5. Rebuild: `npx react-native run-android` or `npx react-native run-ios`
-// 6. If images don't render, verify paths and clear cache: `npx react-native start --reset-cache`
 
 const ViewOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [cancellingOrders, setCancellingOrders] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState<boolean>(true);
   const qrCodeRef = useRef<ViewShot>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const token = await AsyncStorage.getItem('authorization');
-        const response = await axios.get(
-          `${API_BASE_URL}/order/listOrders`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              authorization: token || '',
-            },
+        const response = await axios.get(`${API_BASE_URL}/order/listOrders`, {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token || '',
           },
-        );
+        });
         setOrders(response.data.data || []);
-        setLoading(false);
       } catch (error: any) {
         console.error('Failed to fetch orders', error);
+      } finally {
+        setLoading(false); // Set loading to false when API call succeeds or fails
       }
     };
     fetchOrders();
@@ -82,10 +72,7 @@ const ViewOrders: React.FC = () => {
       'Cancel Order',
       `Are you sure you want to cancel this order?\n\nOrder Status: ${currentStatus.toUpperCase()}\n\nNote: Cancelled orders cannot be undone.`,
       [
-        {
-          text: 'No',
-          style: 'cancel',
-        },
+        { text: 'No', style: 'cancel' },
         {
           text: 'Yes, Cancel',
           style: 'destructive',
@@ -93,7 +80,7 @@ const ViewOrders: React.FC = () => {
             try {
               setCancellingOrders(prev => new Set(prev).add(orderId));
               const token = await AsyncStorage.getItem('authorization');
-
+              console.log('Cancelling order with ID:', orderId);
               const response = await axios.post(
                 `${API_BASE_URL}/order/cancelOrder`,
                 { orderId },
@@ -110,7 +97,6 @@ const ViewOrders: React.FC = () => {
                   order.id === orderId ? { ...order, status: 'cancelled' } : order,
                 ),
               );
-
               Alert.alert('Success', 'Order cancelled successfully');
             } catch (error: any) {
               let errorMessage = 'Failed to cancel order';
@@ -134,6 +120,7 @@ const ViewOrders: React.FC = () => {
   };
 
   const SaveQrToGallery = async () => {
+    console.log('Saving QR code to gallery...');
     try {
       if (Platform.OS === 'android') {
         let permission;
@@ -223,7 +210,7 @@ const ViewOrders: React.FC = () => {
             </View>
           ))}
         </View>
-        {canCancelOrder(item.status) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && (
+        {canCancelOrder(item.status) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && item.status.toUpperCase() !== 'COMPLETED' && (
           <TouchableOpacity
             style={[styles.cancelButton, cancellingOrders.has(item.id) && styles.cancelButtonDisabled]}
             onPress={() => cancelOrder(item.id, item.status)}
@@ -239,7 +226,7 @@ const ViewOrders: React.FC = () => {
             <Text style={styles.cancelledText}>This order has been cancelled</Text>
           </View>
         )}
-        {item.qrCode && isRecentOrder(item.createdAt) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && (
+        {item.qrCode && isRecentOrder(item.createdAt) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && item.status.toUpperCase() !== 'COMPLETED'&& (
           <TouchableOpacity style={styles.qrContainer} activeOpacity={0.8} onPress={SaveQrToGallery}>
             <ViewShot ref={qrCodeRef} options={{ format: 'png', quality: 1 }}>
               <Image source={{ uri: item.qrCode }} style={styles.qrImage} resizeMode="contain" />
@@ -250,40 +237,55 @@ const ViewOrders: React.FC = () => {
       </View>
     );
   };
-
-   if (loading) {
-        return (
-          <View style={[styles.container, styles.loadingContainer]}>
-            <ActivityIndicator size="large" color="#0014A8" />
-          </View>
-        );
-      }
-
+console.log("loading:===========start=====", loading);
   return (
     <View style={styles.container}>
       <Header text="Orders History" />
-      <FlatList
-        data={orders}
-        keyExtractor={item => item.id.toString()}
-        renderItem={renderOrder}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={<Text style={styles.emptyText}>No orders found.</Text>}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        </View>
+      ) : orders.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No data available</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderOrder}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
       <DownNavbar style={styles.stckyNavbar} />
     </View>
   );
 };
 
+// Constants
+const COLORS = {
+  PRIMARY: '#0014A8',
+  TEXT_DARK: '#333',
+  TEXT_SECONDARY: '#888',
+  BACKGROUND: '#F3F6FB',
+  BORDER: '#e0e0e0',
+  CANCELLED: '#F44336',
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F6FB',
+    backgroundColor: COLORS.BACKGROUND,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F4F6FB',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContainer: {
     padding: wp('4%'),
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
   orderId: {
     fontSize: wp('4.5%'),
     fontWeight: 'bold',
-    color: '#0014A8',
+    color: COLORS.PRIMARY,
   },
   status: {
     fontSize: wp('3.5%'),
@@ -317,7 +319,7 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: wp('3.2%'),
-    color: '#888',
+    color: COLORS.TEXT_SECONDARY,
     marginBottom: hp('1%'),
   },
   amountRow: {
@@ -327,11 +329,11 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontWeight: 'bold',
-    color: '#333',
+    color: COLORS.TEXT_DARK,
   },
   amountValue: {
     fontWeight: 'bold',
-    color: '#0014A8',
+    color: COLORS.PRIMARY,
   },
   paymentRow: {
     flexDirection: 'row',
@@ -339,16 +341,16 @@ const styles = StyleSheet.create({
     marginBottom: hp('1%'),
   },
   paymentLabel: {
-    color: '#555',
+    color: COLORS.TEXT_SECONDARY,
   },
   paymentValue: {
-    color: '#555',
+    color: COLORS.TEXT_SECONDARY,
   },
   itemsTitle: {
     fontWeight: 'bold',
     marginTop: hp('1%'),
     marginBottom: hp('0.2%'),
-    color: '#0014A8',
+    color: COLORS.PRIMARY,
   },
   itemsList: {
     marginBottom: hp('1.2%'),
@@ -360,20 +362,20 @@ const styles = StyleSheet.create({
   },
   itemName: {
     flex: 2,
-    color: '#222',
+    color: COLORS.TEXT_DARK,
   },
   itemQty: {
     flex: 1,
     textAlign: 'center',
-    color: '#555',
+    color: COLORS.TEXT_SECONDARY,
   },
   cancelButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: COLORS.CANCELLED,
     paddingVertical: hp('1.2%'),
     borderRadius: wp('2%'),
     alignItems: 'center',
     marginTop: hp('1%'),
-    marginBottom: hp('1%'),
+    marginBottom: hp('0.5%'),
   },
   cancelButtonDisabled: {
     backgroundColor: '#BDBDBD',
@@ -392,20 +394,20 @@ const styles = StyleSheet.create({
     height: wp('45%'),
     borderRadius: wp('3%'),
     borderWidth: wp('0.2%'),
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.BORDER,
     backgroundColor: '#fff',
   },
   qrDownloadText: {
     marginTop: hp('0.8%'),
-    color: '#0014A8',
+    color: COLORS.PRIMARY,
     fontWeight: 'bold',
     fontSize: wp('3.2%'),
   },
   emptyText: {
     textAlign: 'center',
-    color: '#888',
-    marginTop: hp('5%'),
-    fontSize: wp('4%'),
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: wp('4.5%'),
+    fontWeight: '600',
   },
   cancelledContainer: {
     backgroundColor: '#FFEBEE',
@@ -419,7 +421,7 @@ const styles = StyleSheet.create({
   },
   cancelledText: {
     fontSize: wp('3.5%'),
-    color: '#D32F2F',
+    color: COLORS.CANCELLED,
     fontWeight: '600',
   },
   stckyNavbar: {
@@ -433,7 +435,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     borderTopWidth: wp('0.2%'),
-    borderTopColor: '#ccc',
+    borderTopColor: COLORS.BORDER,
   },
 });
 

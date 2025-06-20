@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import React, {useEffect, useState, useCallback, memo} from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,23 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Header from './header';
 import DownNavbar from './downNavbar';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { CartData, CartItem } from './types/cartTypes';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import {CartData, CartItem} from './types/cartTypes';
 import {
   fetchCartData,
   updateCartItemQuantity,
   removeCartItem,
   clearCart as clearCartHelper,
 } from './services/cartHelpers';
+import {useDispatch} from 'react-redux';
 
 // Constants
 const COLORS = {
@@ -43,116 +47,141 @@ type NavigationProp = {
 };
 
 // Cart Item Component
-const CartItemComponent = memo(({ item, onUpdateQuantity, onRemove, updatingItems }: {
-  item: CartItem;
-  onUpdateQuantity: (newQuantity: number) => void;
-  onRemove: () => void;
-  updatingItems: number[];
-}) => (
-  <View style={styles.cartItemCard}>
-    <Image
-      source={{
-        uri: item.item.image
-          ? `data:image/png;base64,${item.item.image}`
-          : 'https://via.placeholder.com/80',
-      }}
-      style={styles.itemImage}
-    />
-    <View style={styles.itemInfo}>
-      <View style={styles.itemHeader}>
-        <Text style={styles.itemName} numberOfLines={2}>
-          {item.item.name}
-        </Text>
-        <TouchableOpacity
-          onPress={onRemove}
-          style={styles.removeIconButton}
-          hitSlop={{ top: wp('2%'), bottom: wp('2%'), left: wp('2%'), right: wp('2%') }}
-        >
-          <Text style={styles.removeIconText}>✕</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.typeRow}>
-        <Image
-          source={{
-            uri: item.item.type?.toLowerCase() === 'veg'
-              ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
-              : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
-          }}
-          style={styles.typeIcon}
-        />
-        <Text style={styles.typeText}>{item.item.type?.toUpperCase() || 'N/A'}</Text>
-      </View>
-      <View style={styles.priceRow}>
-        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
-        <Text style={styles.itemTotal}>Total: ₹{item.total.toFixed(2)}</Text>
-      </View>
-      <View style={styles.quantityRow}>
-        {updatingItems.includes(item.id) ? (
-          <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-        ) : (
-          <>
-            <TouchableOpacity
-              style={[styles.qtyBtn, { opacity: item.quantity === 1 ? 0.5 : 1 }]}
-              onPress={() => item.quantity > 1 && onUpdateQuantity(item.quantity - 1)}
-              disabled={item.quantity === 1}
-            >
-              <Text style={styles.qtyBtnText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.quantity}>{item.quantity}</Text>
-            <TouchableOpacity
-              style={styles.qtyBtn}
-              onPress={() => onUpdateQuantity(item.quantity + 1)}
-            >
-              <Text style={styles.qtyBtnText}>+</Text>
-            </TouchableOpacity>
-          </>
-        )}
+const CartItemComponent = memo(
+  ({
+    item,
+    onUpdateQuantity,
+    onRemove,
+    updatingItems,
+  }: {
+    item: CartItem;
+    onUpdateQuantity: (newQuantity: number) => void;
+    onRemove: () => void;
+    updatingItems: number[];
+  }) => (
+    <View style={styles.cartItemCard}>
+      <Image
+        source={{
+          uri: item.item.image
+            ? `data:image/png;base64,${item.item.image}`
+            : 'https://via.placeholder.com/80',
+        }}
+        style={styles.itemImage}
+      />
+      <View style={styles.itemInfo}>
+        <View style={styles.itemHeader}>
+          <Text style={styles.itemName} numberOfLines={2}>
+            {item.item.name}
+          </Text>
+          <TouchableOpacity
+            onPress={onRemove}
+            style={styles.removeIconButton}
+            hitSlop={{
+              top: wp('2%'),
+              bottom: wp('2%'),
+              left: wp('2%'),
+              right: wp('2%'),
+            }}>
+            <Text style={styles.removeIconText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.typeRow}>
+          <Image
+            source={{
+              uri:
+                item.item.type?.toLowerCase() === 'veg'
+                  ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Veg_symbol.svg/1200px-Veg_symbol.svg.png'
+                  : 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Non_veg_symbol.svg/1200px-Non_veg_symbol.svg.png',
+            }}
+            style={styles.typeIcon}
+          />
+          <Text style={styles.typeText}>
+            {item.item.type?.toUpperCase() || 'N/A'}
+          </Text>
+        </View>
+        <View style={styles.priceRow}>
+          <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+          <Text style={styles.itemTotal}>Total: ₹{item.total.toFixed(2)}</Text>
+        </View>
+        <View style={styles.quantityRow}>
+          {updatingItems.includes(item.id) ? (
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.qtyBtn,
+                  {opacity: item.quantity === 1 ? 0.5 : 1},
+                ]}
+                onPress={() =>
+                  item.quantity > 1 && onUpdateQuantity(item.quantity - 1)
+                }
+                disabled={item.quantity === 1}>
+                <Text style={styles.qtyBtnText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.quantity}>{item.quantity}</Text>
+              <TouchableOpacity
+                style={styles.qtyBtn}
+                onPress={() => onUpdateQuantity(item.quantity + 1)}>
+                <Text style={styles.qtyBtnText}>+</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
       </View>
     </View>
-  </View>
-));
+  ),
+);
 
 // Bill Summary Component
-const BillSummary = memo(({ subtotal, totalAmount, onPay, onClear }: {
-  subtotal: number;
-  totalAmount: number;
-  onPay: () => void;
-  onClear: () => void;
-}) => (
-  <View style={styles.billCard}>
-    <View style={styles.billRow}>
-      <Text style={styles.billLabel}>Subtotal</Text>
-      <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+const BillSummary = memo(
+  ({
+    subtotal,
+    totalAmount,
+    onPay,
+    onClear,
+  }: {
+    subtotal: number;
+    totalAmount: number;
+    onPay: () => void;
+    onClear: () => void;
+  }) => (
+    <View style={styles.billCard}>
+      <View style={styles.billRow}>
+        <Text style={styles.billLabel}>Subtotal</Text>
+        <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+      </View>
+      <View style={[styles.billRow, styles.billTotalRow]}>
+        <Text style={styles.billTotalLabel}>Total</Text>
+        <Text style={styles.billTotalValue}>₹{totalAmount.toFixed(2)}</Text>
+      </View>
+      <TouchableOpacity style={styles.payBtn} onPress={onPay}>
+        <Text style={styles.payBtnText}>Proceed to Payment</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.clearCartBtn} onPress={onClear}>
+        <Text style={styles.clearCartBtnText}>Clear Cart</Text>
+      </TouchableOpacity>
     </View>
-    <View style={[styles.billRow, styles.billTotalRow]}>
-      <Text style={styles.billTotalLabel}>Total</Text>
-      <Text style={styles.billTotalValue}>₹{totalAmount.toFixed(2)}</Text>
-    </View>
-    <TouchableOpacity style={styles.payBtn} onPress={onPay}>
-      <Text style={styles.payBtnText}>Proceed to Payment</Text>
-    </TouchableOpacity>
-    <TouchableOpacity style={styles.clearCartBtn} onPress={onClear}>
-      <Text style={styles.clearCartBtnText}>Clear Cart</Text>
-    </TouchableOpacity>
-  </View>
-));
+  ),
+);
 
 // Empty Cart Component
-const EmptyCart = memo(({ onContinueShopping }: { onContinueShopping: () => void }) => (
-  <View style={styles.emptyCartContainer}>
-    <Image
-      source={{ uri: 'https://img.icons8.com/ios/100/000000/empty-cart.png' }}
-      style={styles.emptyCartIcon}
-    />
-    <Text style={styles.emptyCartText}>Your cart is empty</Text>
-    <TouchableOpacity
-      style={styles.continueShoppingButton}
-      onPress={onContinueShopping}
-    >
-      <Text style={styles.continueShoppingText}>Continue Shopping</Text>
-    </TouchableOpacity>
-  </View>
-));
+const EmptyCart = memo(
+  ({onContinueShopping}: {onContinueShopping: () => void}) => (
+    <View style={styles.emptyCartContainer}>
+      <Image
+        source={{uri: 'https://img.icons8.com/ios/100/000000/empty-cart.png'}}
+        style={styles.emptyCartIcon}
+      />
+      <Text style={styles.emptyCartText}>Your cart is empty</Text>
+      <TouchableOpacity
+        style={styles.continueShoppingButton}
+        onPress={onContinueShopping}>
+        <Text style={styles.continueShoppingText}>Continue Shopping</Text>
+      </TouchableOpacity>
+    </View>
+  ),
+);
 
 const CartPage: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -160,64 +189,81 @@ const CartPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingItems, setUpdatingItems] = useState<number[]>([]);
-
-  const loadCartData = useCallback(async () => {
-    console.log('Loading cart data...');
-    setError(''); // Reset error state
+  const dispatch = useDispatch();
+  const loadCartData = async () => {
     try {
+      console.log('first step 3');
       setLoading(true);
-    console.log('Loading cart data...-0-0-0====================',100);
-
       const data = await fetchCartData();
-    console.log('Loading cart data...-0-0-0====================',data);
-
+      console.log('Loading========loadCartData============', data);
       setCartData(data);
     } catch (err) {
-      setError('Failed to load cart data');
+      setCartData(null);
       console.error('Error fetching cart data:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadCartData();
-  }, [loadCartData]);
+  }, []);
 
-  const updateItemQuantity = useCallback(async (cartItem: CartItem, newQuantity: number) => {
-    try {
-      setUpdatingItems(prev => [...prev, cartItem.id]);
-      await updateCartItemQuantity(cartData?.id || 0, cartItem.id, newQuantity);
-      await loadCartData();
-    } catch (err) {
-      setError('Failed to update cart item');
-      console.error('Error updating cart item:', err);
-    } finally {
-      setUpdatingItems(prev => prev.filter(id => id !== cartItem.id));
-    }
-  }, [cartData?.id, loadCartData]);
+  const updateItemQuantity = useCallback(
+    async (cartItem: CartItem, newQuantity: number) => {
+      console.log(
+        'updateItemQuantity====================',
+        cartItem,
+        newQuantity,
+      );
+      try {
+        setUpdatingItems(prev => [...prev, cartItem.id]);
+        await updateCartItemQuantity(
+          cartData?.id || 0,
+          cartItem.itemId,
+          newQuantity,
+        );
+        await loadCartData();
+      } catch (err) {
+        setError('Failed to update cart item');
+        console.error('Error updating cart item:', err);
+      } finally {
+        setUpdatingItems(prev => prev.filter(id => id !== cartItem.id));
+      }
+    },
+    [cartData?.id, loadCartData],
+  );
 
-  const handleRemoveItem = useCallback(async (item: CartItem) => {
-    try {
-      if (!cartData) return;
-      setUpdatingItems(prev => [...prev, item.id]);
-      // await removeCartItem(cartData.id, item.id);
-      await removeCartItem(Number(item.cartId), Number(item.itemId));
+  const handleRemoveItem = useCallback(
+    async (item: CartItem) => {
+      try {
+        if (!cartData) return;
+        setUpdatingItems(prev => [...prev, item.id]);
+        console.log('first step 1');
+        await removeCartItem(Number(item.cartId), Number(item.itemId));
+        console.log('first step 2');
 
-      await loadCartData();
-    } catch (err) {
-      setError('Failed to remove cart item');
-      console.error('Error removing cart item:', err);
-    } finally {
-      setUpdatingItems(prev => prev.filter(id => id !== item.id));
-    }
-  }, [cartData, loadCartData]);
+        await loadCartData();
+      } catch (err) {
+        // setError('Failed to remove cart item');
+        console.error('Error removing cart item:', err);
+      } finally {
+        setUpdatingItems(prev => prev.filter(id => id !== item.id));
+      }
+    },
+    [cartData, loadCartData],
+  );
 
   const handleClearCart = useCallback(async () => {
     try {
       setLoading(true);
       await clearCartHelper();
-      setCartData({ id: 0, cartItems: [], totalAmount: 0, menuConfiguration: { name: '' } });
+      setCartData({
+        id: 0,
+        cartItems: [],
+        totalAmount: 0,
+        menuConfiguration: {name: ''},
+      });
     } catch (err) {
       setError('Failed to clear cart');
       console.error('Error clearing cart:', err);
@@ -231,25 +277,43 @@ const CartPage: React.FC = () => {
       'Clear Cart',
       'Are you sure you want to clear your cart?',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear', onPress: handleClearCart, style: 'destructive' },
+        {text: 'Cancel', style: 'cancel'},
+        {text: 'Clear', onPress: handleClearCart, style: 'destructive'},
       ],
-      { cancelable: true },
+      {cancelable: true},
     );
   }, [handleClearCart]);
 
-  const handlePayment = useCallback(() => {
-    navigation.navigate('PaymentMethod');
-  }, [navigation]);
-
-  const calculateTotal = useCallback(() => {
-    if (!cartData?.cartItems?.length) return { subtotal: 0, totalAmount: 0 };
-    const subtotal = cartData.cartItems.reduce((sum, item) => sum + item.total, 0);
+    const calculateTotal = useCallback(() => {
+    if (!cartData?.cartItems?.length) return {subtotal: 0, totalAmount: 0};
+    const subtotal = cartData.cartItems.reduce(
+      (sum, item) => sum + item.total,
+      0,
+    );
     const gstAndCharges = subtotal * 0.0; // 0% GST
     const platformFee = 0; // Fixed platform fee
     const totalAmount = subtotal + gstAndCharges + platformFee;
-    return { subtotal, totalAmount };
+
+    // Update the store with the total amount
+    dispatch({
+      type: 'checkoutTotalBalance',
+      payload: totalAmount,
+    });
+    
+    return {subtotal, totalAmount};
   }, [cartData]);
+
+  const {subtotal, totalAmount} = calculateTotal();
+
+
+  const handlePayment = useCallback(() => {
+    //here we need to set total amount into store
+  
+
+    navigation.navigate('PaymentMethod');
+  }, [navigation]);
+
+
 
   if (loading) {
     return (
@@ -278,7 +342,6 @@ const CartPage: React.FC = () => {
     );
   }
 
-  const { subtotal, totalAmount } = calculateTotal();
 
   return (
     <View style={styles.container}>
@@ -290,7 +353,9 @@ const CartPage: React.FC = () => {
               <CartItemComponent
                 key={item.id}
                 item={item}
-                onUpdateQuantity={(newQuantity) => updateItemQuantity(item, newQuantity)}
+                onUpdateQuantity={newQuantity =>
+                  updateItemQuantity(item, newQuantity)
+                }
                 onRemove={() => handleRemoveItem(item)}
                 updatingItems={updatingItems}
               />
@@ -304,7 +369,7 @@ const CartPage: React.FC = () => {
           />
         </>
       ) : (
-        <EmptyCart onContinueShopping={() => navigation.goBack()} />
+        <EmptyCart onContinueShopping={() => navigation.navigate('Dashboard')} />
       )}
       <DownNavbar />
     </View>
@@ -385,7 +450,7 @@ const styles = StyleSheet.create({
     padding: wp('3.5%'),
     elevation: 2,
     shadowColor: COLORS.PRIMARY, // #0014A8
-    shadowOffset: { width: 0, height: hp('0.2%') },
+    shadowOffset: {width: 0, height: hp('0.2%')},
     shadowOpacity: 0.08,
     shadowRadius: wp('1.5%'),
   },
@@ -487,7 +552,7 @@ const styles = StyleSheet.create({
     padding: wp('4%'),
     elevation: 3,
     shadowColor: COLORS.PRIMARY, // #0014A8
-    shadowOffset: { width: 0, height: hp('0.3%') },
+    shadowOffset: {width: 0, height: hp('0.3%')},
     shadowOpacity: 0.1,
     shadowRadius: wp('2%'),
   },

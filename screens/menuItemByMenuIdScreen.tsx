@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -37,7 +37,7 @@ import { API_BASE_URL } from './services/restApi';
 // Constants
 const COLORS = {
   PRIMARY: '#0014A8',
-  ERROR: '#ff0000', // Corrected 'red' to hex code
+  ERROR: '#ff0000',
   TEXT_SECONDARY: '#666',
   TEXT_DARK: '#222',
   TEXT_LIGHT: '#333',
@@ -71,7 +71,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
   const { menuId } = route.params;
 
   // Fetch menu items
-  const fetchMenuItems = useCallback(async () => {
+  const fetchMenuItems = async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('authorization');
@@ -112,40 +112,46 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [menuId]);
+  };
+
+  // Fetch cart data
+  const loadCartData = async () => {
+    try {
+      setLoading(true);
+      setCartItems({});
+      const data = await fetchCartData();
+      console.log('Fetched cart data:', data);
+      setCartData(data);
+      const cartItemsMap: CartItemsState = {};
+      if (data?.cartItems && Array.isArray(data.cartItems)) {
+        data.cartItems.forEach((cartItem: any) => {
+          const itemIdKey = String(cartItem.itemId);
+          cartItemsMap[itemIdKey] = {
+            quantity: cartItem.quantity,
+            cartItemId: cartItem.id,
+          };
+        });
+      }
+      setCartItems(cartItemsMap);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching cart data:', err);
+    }finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCartData();
+    }, [cartUpdated, navigation]),
+  );
 
   useEffect(() => {
     fetchMenuItems();
-  }, [fetchMenuItems]);
+  }, [menuId]);
 
-  // Fetch cart data
-  useFocusEffect(
-    useCallback(() => {
-      const getCartData = async () => {
-        try {
-          const data = await fetchCartData();
-          setCartData(data);
-          const cartItemsMap: CartItemsState = {};
-          if (data?.cartItems && Array.isArray(data.cartItems)) {
-            data.cartItems.forEach((cartItem: any) => {
-              const itemIdKey = String(cartItem.itemId);
-              cartItemsMap[itemIdKey] = {
-                quantity: cartItem.quantity,
-                cartItemId: cartItem.id,
-              };
-            });
-          }
-          setCartItems(cartItemsMap);
-        } catch (err) {
-          console.error('Error fetching cart data:', err);
-        }
-      };
-      getCartData();
-    }, [cartUpdated]),
-  );
-
-  const addToCart = useCallback(async (item: any, menudata: MenuData) => {
-    
+  const addToCart = async (item: any, menudata: MenuData) => {
     try {
       setUpdateLoading(item.id);
       const minQty = 1;
@@ -158,6 +164,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
 
       const updatedCartData = await fetchCartData();
       setCartData(updatedCartData);
+      setCartUpdated(true);
 
       const cartItem = findCartItemByItemId(updatedCartData, item.item.id);
       if (cartItem) {
@@ -175,9 +182,9 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
     } finally {
       setUpdateLoading(null);
     }
-  }, []);
+  };
 
-  const increaseQuantity = useCallback(async (item: MenuItem) => {
+  const increaseQuantity = async (item: MenuItem) => {
     try {
       setUpdateLoading(item.id);
       setCartUpdated(true);
@@ -200,15 +207,17 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
       }
 
       const newQty = currentQty + 1;
-      const cartItemId = cartItems[itemKey].cartItemId;
+      const cartItemId = item.itemId
+;
+      console.log( 'cartItemId:=9==========', cartItemId);
+      console.log( 'cartItemId:=======0909==========', cartData);
       await updateCartItemQuantity(
         cartData?.id || '',
         cartItemId,
         newQty,
       );
 
-      const updatedCartData = await fetchCartData();
-      setCartData(updatedCartData);
+      await loadCartData();
       setCartItems(prev => ({
         ...prev,
         [itemKey]: {
@@ -217,28 +226,29 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
         },
       }));
     } catch (err) {
-      setError('Failed to update quantity');
+      // setError('Failed to update quantity');
       console.error('Error increasing quantity:', err);
     } finally {
       setUpdateLoading(null);
     }
-  }, [cartData, cartItems, menuData, addToCart]);
+  };
 
-  const decreaseQuantity = useCallback(async (item: MenuItem) => {
+  const decreaseQuantity = async (item: MenuItem) => {
     try {
       setUpdateLoading(item.id);
+      setCartUpdated(true);
       const itemId = item.item.id;
       const itemKey = String(itemId);
       if (!cartItems[itemKey]) return;
 
       const currentQty = cartItems[itemKey].quantity;
       const minQty = Number(item.minQuantity) || 1;
-      const cartItemId = cartItems[itemKey].cartItemId;
+      const cartItemId = item.itemId
+
 
       if (currentQty <= minQty) {
         await removeCartItem(cartData?.id || 0, cartItemId);
-        const updatedCartData = await fetchCartData();
-        setCartData(updatedCartData);
+        await loadCartData();
         setCartItems(prev => {
           const updated = { ...prev };
           delete updated[itemKey];
@@ -247,8 +257,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
       } else {
         const newQty = currentQty - 1;
         await updateCartItemQuantity(cartData?.id || '', cartItemId, newQty);
-        const updatedCartData = await fetchCartData();
-        setCartData(updatedCartData);
+        await loadCartData();
         setCartItems(prev => ({
           ...prev,
           [itemKey]: {
@@ -263,7 +272,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
     } finally {
       setUpdateLoading(null);
     }
-  }, [cartData, cartItems]);
+  };
 
   if (loading) {
     return (
@@ -304,7 +313,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header text={menuData?.name || 'Menu'}/>
+      <Header text={menuData?.name || 'Menu'} />
       <ScrollView contentContainerStyle={styles.menuListContainer}>
         {menuData?.menuItems?.length === 0 || !menuData?.menuItems ? (
           <View style={styles.centeredContainer}>
@@ -382,7 +391,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
         <TouchableOpacity
           style={styles.goToCartButton}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('CartPage' as never)}
+          onPress={() => navigation.navigate('CartPage')}
         >
           <Text style={styles.goToCartButtonText}>Go to Cart</Text>
         </TouchableOpacity>
@@ -395,7 +404,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND, // #f7f8fa
+    backgroundColor: COLORS.BACKGROUND,
   },
   centeredContainer: {
     flex: 1,
@@ -408,11 +417,11 @@ const styles = StyleSheet.create({
   },
   menuCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.CARD, // #fff
+    backgroundColor: COLORS.CARD,
     borderRadius: wp('3.5%'),
     marginBottom: hp('2%'),
     elevation: 2,
-    shadowColor: COLORS.PRIMARY, // #0014A8
+    shadowColor: COLORS.PRIMARY,
     shadowOpacity: 0.08,
     shadowRadius: wp('2%'),
     shadowOffset: { width: 0, height: hp('0.2%') },
@@ -440,14 +449,14 @@ const styles = StyleSheet.create({
   menuCardName: {
     fontSize: wp('4.2%'),
     fontWeight: '600',
-    color: COLORS.TEXT_DARK, // #222
+    color: COLORS.TEXT_DARK,
     flex: 1,
     marginRight: wp('2%'),
   },
   menuCardPrice: {
     fontSize: wp('4%'),
     fontWeight: 'bold',
-    color: COLORS.PRIMARY, // #0014A8
+    color: COLORS.PRIMARY,
     marginLeft: wp('2%'),
   },
   menuCardTypeRow: {
@@ -462,12 +471,12 @@ const styles = StyleSheet.create({
   },
   menuCardTypeText: {
     fontSize: wp('3%'),
-    color: COLORS.TEXT_SECONDARY, // #666
+    color: COLORS.TEXT_SECONDARY,
     fontWeight: '500',
   },
   menuCardDesc: {
     fontSize: wp('3.2%'),
-    color: COLORS.TEXT_SECONDARY, // #666
+    color: COLORS.TEXT_SECONDARY,
     marginVertical: hp('0.5%'),
     lineHeight: hp('2%'),
   },
@@ -476,7 +485,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   menuCardAddBtn: {
-    backgroundColor: COLORS.PRIMARY, // #0014A8
+    backgroundColor: COLORS.PRIMARY,
     paddingVertical: hp('0.8%'),
     paddingHorizontal: wp('7%'),
     borderRadius: wp('5%'),
@@ -484,7 +493,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   menuCardAddBtnText: {
-    color: COLORS.CARD, // #fff
+    color: COLORS.CARD,
     fontWeight: 'bold',
     fontSize: wp('3.5%'),
     letterSpacing: wp('0.2%'),
@@ -492,7 +501,7 @@ const styles = StyleSheet.create({
   menuCardQtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.QTY_BG, // #f0f2f5
+    backgroundColor: COLORS.QTY_BG,
     borderRadius: wp('5%'),
     paddingVertical: hp('0.4%'),
     paddingHorizontal: wp('2%'),
@@ -501,61 +510,61 @@ const styles = StyleSheet.create({
     width: wp('7%'),
     height: wp('7%'),
     borderRadius: wp('3.5%'),
-    backgroundColor: COLORS.CARD, // #fff
+    backgroundColor: COLORS.CARD,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: wp('0.2%'),
-    borderColor: COLORS.BORDER, // #d1d5db
+    borderColor: COLORS.BORDER,
     marginHorizontal: wp('0.5%'),
   },
   menuCardQtyBtnText: {
     fontSize: wp('4.5%'),
     fontWeight: 'bold',
-    color: COLORS.PRIMARY, // #0014A8
+    color: COLORS.PRIMARY,
   },
   menuCardQtyText: {
     marginHorizontal: wp('2.5%'),
     fontSize: wp('4%'),
     fontWeight: 'bold',
-    color: COLORS.TEXT_DARK, // #222
+    color: COLORS.TEXT_DARK,
   },
   goToCartButton: {
     position: 'absolute',
     bottom: hp('9%'),
     left: wp('10%'),
     right: wp('10%'),
-    backgroundColor: COLORS.PRIMARY, // #0014A8
+    backgroundColor: COLORS.PRIMARY,
     borderRadius: wp('2%'),
     paddingVertical: hp('1.2%'),
     alignItems: 'center',
     zIndex: 10,
     elevation: 6,
-    shadowColor: COLORS.PRIMARY, // #0014A8
+    shadowColor: COLORS.PRIMARY,
     shadowOpacity: 0.15,
     shadowRadius: wp('2%'),
     shadowOffset: { width: 0, height: hp('0.2%') },
     marginBottom: hp('1%'),
   },
   goToCartButtonText: {
-    color: COLORS.CARD, // #fff
+    color: COLORS.CARD,
     fontWeight: 'bold',
     fontSize: wp('3.8%'),
     letterSpacing: wp('0.2%'),
   },
   loadingText: {
-    color: COLORS.TEXT_LIGHT, // #333
+    color: COLORS.TEXT_LIGHT,
     textAlign: 'center',
     marginBottom: hp('2%'),
     fontSize: wp('4%'),
   },
   errorText: {
-    color: COLORS.ERROR, // #ff0000
+    color: COLORS.ERROR,
     textAlign: 'center',
     marginBottom: hp('2%'),
     fontSize: wp('4%'),
   },
   noItemsText: {
-    color: '#000', // Black text for consistency
+    color: '#000',
     textAlign: 'center',
     fontSize: wp('4.5%'),
     fontWeight: '600',

@@ -16,6 +16,7 @@ export interface UserData {
 export interface AppState {
   currentUserData: UserData | null;
   myCartItems: number;
+  checkoutTotalBalance: number;
 }
 
 // Action type
