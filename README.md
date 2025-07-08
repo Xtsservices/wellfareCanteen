@@ -198,6 +198,10 @@ android:usesCleartextTraffic="true"
 
 directory
 step:1 open this ===> https://www.appicon.co/ ==========> open this in browser
+or
+
+https://romannurik.github.io/AndroidAssetStudio/icons-launcher.html#foreground.type=image&foreground.space.trim=1&foreground.space.pad=0.25&foreColor=rgba(96%2C%20125%2C%20139%2C%200)&backColor=rgb(232%2C%20238%2C%20244)&crop=0&backgroundShape=circle&effects=none&name=ic_launcher
+
 step:2 drag and drop image in tha above link
 step:3 download that and open select last 4 files copy
 step:4 ope the below path in filemanger and replace that
