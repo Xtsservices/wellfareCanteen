@@ -82,17 +82,17 @@ android {
         applicationId "com.wellfarecanteen"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.1.4"
+        versionCode 6
+        versionName "1.1.6"
         missingDimensionStrategy 'react-native-camera', 'general'
     }
     signingConfigs {
         release {
             if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
                 storeFile file(MYAPP_UPLOAD_STORE_FILE)
-                storePassword MYAPP_UPLOAD_STORE_PASSWORD
-                keyAlias MYAPP_UPLOAD_KEY_ALIAS
-                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+                storePassword '123456'
+                keyAlias 'my-key-alias'
+                keyPassword '123456'
             }
         }
     }
