@@ -70,6 +70,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation, route }) => {
         setMenuData(response.data.data);
         setLoading(false);
       } catch (error) {
+        setLoading(false);
         if (axios.isAxiosError(error) && error.response?.status === 500) {
           Alert.alert('Error', 'Failed to load menu data. Please try again later.');
         }
