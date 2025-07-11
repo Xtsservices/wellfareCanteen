@@ -1,5 +1,5 @@
 
-// const URL = 'http://192.168.1.6:3002/api';
+// const URL = 'http://192.168.1.20:3002/api';
 const URL = 'https://server.welfarecanteen.in/api';
 
 export const API_BASE_URL = URL;

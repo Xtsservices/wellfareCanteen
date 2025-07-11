@@ -122,6 +122,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
             />
             <Text style={styles.menuText}>Wallet</Text>
           </TouchableOpacity>
+           <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('privacypolicy')}>
+            <Image
+              style={styles.profile}
+              source={{
+                uri: 'https://static.thenounproject.com/png/2800747-200.png',
+              }}
+            />
+            <Text style={styles.menuText}>Privacy Policy</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
       <View style={styles.bottomContainer}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -7,24 +7,31 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  PermissionsAndroid,
-  Platform,
   ActivityIndicator,
+  NativeModules,
 } from 'react-native';
 import DownNavbar from './downNavbar';
 import Header from './header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import ViewShot from 'react-native-view-shot';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { API_BASE_URL } from './services/restApi';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import {API_BASE_URL} from './services/restApi';
+
+import RNFS from 'react-native-fs';
 
 const ViewOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
-  const [cancellingOrders, setCancellingOrders] = useState<Set<number>>(new Set());
+  const [cancellingOrders, setCancellingOrders] = useState<Set<number>>(
+    new Set(),
+  );
   const [loading, setLoading] = useState<boolean>(true);
   const qrCodeRef = useRef<ViewShot>(null);
+
+  const {SaveImageModule} = NativeModules;
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -72,7 +79,7 @@ const ViewOrders: React.FC = () => {
       'Cancel Order',
       `Are you sure you want to cancel this order?\n\nOrder Status: ${currentStatus.toUpperCase()}\n\nNote: Cancelled orders cannot be undone.`,
       [
-        { text: 'No', style: 'cancel' },
+        {text: 'No', style: 'cancel'},
         {
           text: 'Yes, Cancel',
           style: 'destructive',
@@ -83,7 +90,7 @@ const ViewOrders: React.FC = () => {
               console.log('Cancelling order with ID:', orderId);
               const response = await axios.post(
                 `${API_BASE_URL}/order/cancelOrder`,
-                { orderId },
+                {orderId},
                 {
                   headers: {
                     'Content-Type': 'application/json',
@@ -94,7 +101,9 @@ const ViewOrders: React.FC = () => {
 
               setOrders(prevOrders =>
                 prevOrders.map(order =>
-                  order.id === orderId ? { ...order, status: 'cancelled' } : order,
+                  order.id === orderId
+                    ? {...order, status: 'cancelled'}
+                    : order,
                 ),
               );
               Alert.alert('Success', 'Order cancelled successfully');
@@ -122,29 +131,12 @@ const ViewOrders: React.FC = () => {
   const SaveQrToGallery = async () => {
     console.log('Saving QR code to gallery...');
     try {
-      if (Platform.OS === 'android') {
-        let permission;
-        if (Platform.Version >= 33) {
-          permission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
-        } else {
-          permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-        }
-        const granted = await PermissionsAndroid.request(permission, {
-          title: 'Storage Permission',
-          message: 'App needs access to storage to save QR code',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        });
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert('Permission denied', 'Cannot save QR code without permission');
-          return;
-        }
-      }
       if (qrCodeRef.current) {
         const uri = await qrCodeRef.current.capture?.();
+        
         if (uri) {
-          await CameraRoll.save(uri, { type: 'photo' });
+          const base64 = await RNFS.readFile(uri, 'base64');
+          await SaveImageModule.saveBase64Image(base64, `QRCode_${Date.now()}`);
           Alert.alert('Success', 'QR code saved to gallery!');
         } else {
           Alert.alert('Error', 'Failed to capture QR code');
@@ -172,17 +164,19 @@ const ViewOrders: React.FC = () => {
     }
   };
 
-  const renderOrder = ({ item }: { item: any }) => {
+  const renderOrder = ({item}: {item: any}) => {
     const isCancelled = item.status.toLowerCase() === 'cancelled';
     const strikeThroughStyle = isCancelled
-      ? { textDecorationLine: 'line-through' as 'line-through', color: '#888' }
+      ? {textDecorationLine: 'line-through' as 'line-through', color: '#888'}
       : {};
 
     return (
       <View style={styles.orderCard}>
         <View style={styles.orderHeader}>
-          <Text style={[styles.orderId, strikeThroughStyle]}>Order #{item.id}</Text>
-          <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
+          <Text style={[styles.orderId, strikeThroughStyle]}>
+            Order #{item.id}
+          </Text>
+          <Text style={[styles.status, {color: getStatusColor(item.status)}]}>
             {item.status.toUpperCase()}
           </Text>
         </View>
@@ -191,10 +185,14 @@ const ViewOrders: React.FC = () => {
         </Text>
         <View style={styles.amountRow}>
           <Text style={[styles.amountLabel, strikeThroughStyle]}>Total:</Text>
-          <Text style={[styles.amountValue, strikeThroughStyle]}>₹{item.totalAmount}</Text>
+          <Text style={[styles.amountValue, strikeThroughStyle]}>
+            ₹{item.totalAmount}
+          </Text>
         </View>
         <View style={styles.paymentRow}>
-          <Text style={[styles.paymentLabel, strikeThroughStyle]}>Payment:</Text>
+          <Text style={[styles.paymentLabel, strikeThroughStyle]}>
+            Payment:
+          </Text>
           <Text style={[styles.paymentValue, strikeThroughStyle]}>
             {item.payment?.status} via {item.payment?.paymentMethod}
           </Text>
@@ -206,38 +204,60 @@ const ViewOrders: React.FC = () => {
               <Text style={[styles.itemName, strikeThroughStyle]}>
                 {orderItem.menuItemItem.name}
               </Text>
-              <Text style={[styles.itemQty, strikeThroughStyle]}>× {orderItem.quantity}</Text>
+              <Text style={[styles.itemQty, strikeThroughStyle]}>
+                × {orderItem.quantity}
+              </Text>
             </View>
           ))}
         </View>
-        {canCancelOrder(item.status) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && item.status.toUpperCase() !== 'COMPLETED' && (
-          <TouchableOpacity
-            style={[styles.cancelButton, cancellingOrders.has(item.id) && styles.cancelButtonDisabled]}
-            onPress={() => cancelOrder(item.id, item.status)}
-            disabled={cancellingOrders.has(item.id)}
-          >
-            <Text style={styles.cancelButtonText}>
-              {cancellingOrders.has(item.id) ? 'Cancelling...' : 'Cancel Order'}
-            </Text>
-          </TouchableOpacity>
-        )}
+        {canCancelOrder(item.status) &&
+          !isCancelled &&
+          item.status.toUpperCase() !== 'CANCELED' &&
+          item.status.toUpperCase() !== 'COMPLETED' && (
+            <TouchableOpacity
+              style={[
+                styles.cancelButton,
+                cancellingOrders.has(item.id) && styles.cancelButtonDisabled,
+              ]}
+              onPress={() => cancelOrder(item.id, item.status)}
+              disabled={cancellingOrders.has(item.id)}>
+              <Text style={styles.cancelButtonText}>
+                {cancellingOrders.has(item.id)
+                  ? 'Cancelling...'
+                  : 'Cancel Order'}
+              </Text>
+            </TouchableOpacity>
+          )}
         {isCancelled && (
           <View style={styles.cancelledContainer}>
-            <Text style={styles.cancelledText}>This order has been cancelled</Text>
+            <Text style={styles.cancelledText}>
+              This order has been cancelled
+            </Text>
           </View>
         )}
-        {item.qrCode && isRecentOrder(item.createdAt) && !isCancelled && item.status.toUpperCase() !== 'CANCELED' && item.status.toUpperCase() !== 'COMPLETED'&& (
-          <TouchableOpacity style={styles.qrContainer} activeOpacity={0.8} onPress={SaveQrToGallery}>
-            <ViewShot ref={qrCodeRef} options={{ format: 'png', quality: 1 }}>
-              <Image source={{ uri: item.qrCode }} style={styles.qrImage} resizeMode="contain" />
-            </ViewShot>
-            <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
-          </TouchableOpacity>
-        )}
+        {item.qrCode &&
+          isRecentOrder(item.createdAt) &&
+          !isCancelled &&
+          item.status.toUpperCase() !== 'CANCELED' &&
+          item.status.toUpperCase() !== 'COMPLETED' && (
+            <TouchableOpacity
+              style={styles.qrContainer}
+              activeOpacity={0.8}
+              onPress={SaveQrToGallery}>
+              <ViewShot ref={qrCodeRef} options={{format: 'png', quality: 1}}>
+                <Image
+                  source={{uri: item.qrCode}}
+                  style={styles.qrImage}
+                  resizeMode="contain"
+                />
+              </ViewShot>
+              <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
+            </TouchableOpacity>
+          )}
       </View>
     );
   };
-console.log("loading:===========start=====", loading);
+  console.log('loading:===========start=====', loading);
   return (
     <View style={styles.container}>
       <Header text="Orders History" />
@@ -299,7 +319,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.07,
     shadowRadius: wp('2%'),
-    shadowOffset: { width: 0, height: hp('0.2%') },
+    shadowOffset: {width: 0, height: hp('0.2%')},
     elevation: 3,
   },
   orderHeader: {
