@@ -67,6 +67,7 @@ export type RootStackParamList = {
     cart: CheckoutCartItem[];   
     total: number;
   };  
+  privacypolicy:undefined;
   Home: undefined;
   Splash: undefined;
   Login: undefined;
@@ -88,4 +89,5 @@ export type RootStackParamList = {
   PaymentServices: { paymentLink: any }
   SdkHome: undefined;
   PaymentStatusScreen: { status: 'success' | 'failure'; orderData?: any; error?: any };
+  
 };
