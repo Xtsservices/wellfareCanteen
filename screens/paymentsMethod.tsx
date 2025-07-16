@@ -188,6 +188,8 @@ const PaymentMethod: React.FC = () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('authorization');
+      const phoneNumber =   await AsyncStorage.getItem('phoneNumber');
+
       if (!token) {
         Alert.alert('Error', 'No token found');
         setLoading(false);
@@ -238,11 +240,14 @@ const PaymentMethod: React.FC = () => {
         return;
       }
 
+      console.log("checkoutTotalBalance",checkoutTotalBalance)
+      console.log("token",token)
       // Online payment via Cashfree SDK
       const userData = {
         customer_id: 'user_001', // TODO: Replace with actual user ID
-        customer_email: 'testuser@example.com', // TODO: Replace with actual email
-        customer_phone: '9876543210', // TODO: Replace with actual phone
+        customer_email: 'testuser@example.com', 
+        customer_phone: phoneNumber, 
+        order_amount:checkoutTotalBalance
       };
 
       const response = await axios.post(
@@ -256,6 +261,8 @@ const PaymentMethod: React.FC = () => {
         },
       );
 
+      console.log("paymentresponse",response.data)
+
       const {payment_session_id, order_id} = response.data;
 
       if (!payment_session_id || !order_id) {
@@ -265,7 +272,7 @@ const PaymentMethod: React.FC = () => {
       const session = new CFSession(
         payment_session_id,
         order_id,
-        CFEnvironment.SANDBOX, // TODO: Use CFEnvironment.PRODUCTION in production
+        CFEnvironment.PRODUCTION, // TODO: Use CFEnvironment.PRODUCTION in production
       );
 
       console.log('⚡ Initiating Web Checkout with session:', session);

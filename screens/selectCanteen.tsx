@@ -72,6 +72,7 @@ const SelectCanteenScreen = () => {
         );
       }
     } catch (error) {
+      setLoading(false);
       // Fallback or error handling
     } finally {
       setLoading(false);
@@ -81,7 +82,7 @@ const SelectCanteenScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       fetchCanteens();
-    }, []),
+    }, [navigation]),
   );
 
   const handleCanteenSelect = (canteenName: string) => {
