@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Button, StyleSheet } from 'react-native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Cashfree imports (✅ use correct modules)
 import {
@@ -47,6 +48,7 @@ const PaymentScreen: React.FC = () => {
       console.log('Starting payment process...');
 // const URL = 'http://192.168.1.22:3002/api';
         // `${API_BASE_URL}/paymentsdk/createOrder`,
+      const phoneNumber =   await AsyncStorage.getItem('phoneNumber');
 
 
       const response = await axios.post(
@@ -54,7 +56,7 @@ const PaymentScreen: React.FC = () => {
         {
           customer_id: 'user_001',
           customer_email: 'testuser@example.com',
-          customer_phone: '9876543210',
+          customer_phone: phoneNumber,
         }
       );
 
@@ -67,7 +69,7 @@ const PaymentScreen: React.FC = () => {
       const session = new CFSession(
         payment_session_id,
         order_id,
-        CFEnvironment.SANDBOX // PRODUCTION or CFEnvironment.SANDBOX for testing
+        CFEnvironment.PRODUCTION 
       );
 
       console.log('⚡ Initiating Web Checkout with session:', session);
