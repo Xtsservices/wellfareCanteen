@@ -68,6 +68,7 @@ export type RootStackParamList = {
     total: number;
   };  
   privacypolicy:undefined;
+  ContactUs:undefined;
   Home: undefined;
   Splash: undefined;
   Login: undefined;

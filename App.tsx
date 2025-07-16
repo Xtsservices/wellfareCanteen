@@ -43,6 +43,7 @@ import {ErrorBoundary} from 'react-error-boundary';
 import CashFreeSdk from './screens/cashFreeSDK/CashFreeSdk';
 import PaymentStatusScreen from './screens/PaymentStatusScreen';
 import PrivacyPolicy from './screens/PrivacyPolicy';
+import ContactUsScreen from './screens/contactUs';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -251,6 +252,7 @@ const App = () => {
         <Stack.Screen name="SdkHome" component={CashFreeSdk} />
         <Stack.Screen name="PaymentStatusScreen" component={PaymentStatusScreen} />
         <Stack.Screen name="privacypolicy" component={PrivacyPolicy} />
+        <Stack.Screen name="ContactUs" component={ContactUsScreen} />
       </Stack.Navigator>
       <Toast />
     </NavigationContainer>

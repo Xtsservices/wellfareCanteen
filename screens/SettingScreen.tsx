@@ -131,8 +131,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({navigation}) => {
                 uri: 'https://static.thenounproject.com/png/2800747-200.png',
               }}
             />
-            <Text style={styles.menuText}>Privacy Policy</Text>
+            <Text style={styles.menuText}>Terms Conditions</Text>
           </TouchableOpacity>
+
+           <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ContactUs')}>
+            <Image
+              style={styles.profile}
+              source={{
+                uri: 'https://cdn-icons-png.flaticon.com/512/455/455705.png',
+              }}
+            />
+            <Text style={styles.menuText}>Contact Us</Text>
+          </TouchableOpacity>
+        
+          
+          {/* <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('TermsConditions')}>
+            <Image
+              style={styles.profile}
+              source={{
+                uri: 'https://cdn-icons-png.flaticon.com/512/2995/2995400.png',
+              }}
+            />
+            <Text style={styles.menuText}>Terms & Conditions</Text>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
       <View style={styles.bottomContainer}>
