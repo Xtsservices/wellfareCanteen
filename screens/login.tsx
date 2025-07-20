@@ -25,7 +25,7 @@ import Toast from 'react-native-toast-message';
 import {Login, ResendOtp, VerifyOtp} from './services/restApi';
 import {jwtDecode} from 'jwt-decode';
 import {useDispatch} from 'react-redux';
-import logo from './imgs/worldtek.png';
+const logo = require('./imgs/worldtek.png');
 
 const {width, height} = Dimensions.get('window');
 
