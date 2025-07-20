@@ -155,7 +155,7 @@ export const updateCartItemQuantity = async (
     console.log('Response from updateCartItemQuantity:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error updating cart item quantity:=====', error);
+    console.log('Error updating cart item quantity', error);
     throw error;
   }
 };

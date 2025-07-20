@@ -190,6 +190,7 @@ const CartPage: React.FC = () => {
   const [error, setError] = useState('');
   const [updatingItems, setUpdatingItems] = useState<number[]>([]);
   const dispatch = useDispatch();
+  
   const loadCartData = async () => {
     try {
       console.log('first step 3');
@@ -197,6 +198,7 @@ const CartPage: React.FC = () => {
       const data = await fetchCartData();
       console.log('Loading========loadCartData============', data);
       setCartData(data);
+      setError("")
     } catch (err) {
       setCartData(null);
       console.error('Error fetching cart data:', err);
@@ -225,8 +227,8 @@ const CartPage: React.FC = () => {
         );
         await loadCartData();
       } catch (err) {
-        setError('Failed to update cart item');
-        console.error('Error updating cart item:', err);
+        console.log('Error updating cart item', err);
+        // setError('Failed to update cart item');
       } finally {
         setUpdatingItems(prev => prev.filter(id => id !== cartItem.id));
       }

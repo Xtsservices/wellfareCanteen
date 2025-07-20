@@ -24,12 +24,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-
-// Note: Ensure react-native-responsive-screen is installed:
-// 1. Run `npm install react-native-responsive-screen`
-// 2. Rebuild: `npx react-native run-android` or `npx react-native run-ios`
-// 3. Ensure Header.tsx uses PNGs (wallet.png, profile.png) in src/assets/
-// 4. If images don't render, verify paths and clear cache: `npx react-native start --reset-cache`
+import DownNavbar from './downNavbar';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'SelectCanteen'>;
 
@@ -73,7 +68,6 @@ const SelectCanteenScreen = () => {
       }
     } catch (error) {
       setLoading(false);
-      // Fallback or error handling
     } finally {
       setLoading(false);
     }
@@ -154,31 +148,51 @@ const SelectCanteenScreen = () => {
         <Text style={styles.headerSubtitle}>Click To Use</Text>
       </View>
 
-      {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#010080" />
+      <View style={[
+        styles.contentContainer,
+        {paddingBottom: selectedCanteen ? hp('12%') : hp('8%')} // Dynamic style here
+      ]}>
+        {loading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#010080" />
+          </View>
+        ) : (
+          <FlatList
+            data={canteens}
+            keyExtractor={item => item.id}
+            renderItem={renderCanteenItem}
+            numColumns={2}
+            contentContainerStyle={styles.grid}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No canteens available</Text>
+            }
+          />
+        )}
+      </View>
+
+      {/* Confirm Button - Fixed position above footer */}
+      {selectedCanteen && (
+        <View style={styles.confirmButtonContainer}>
+          <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+            <Text style={styles.confirmButtonText}>Confirm Selection</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        <FlatList
-          data={canteens}
-          keyExtractor={item => item.id}
-          renderItem={renderCanteenItem}
-          numColumns={2}
-          contentContainerStyle={styles.grid}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No canteens available</Text>
-          }
-        />
       )}
 
-      {selectedCanteen && (
-        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-          <Text style={styles.confirmButtonText}>Confirm Selection</Text>
-        </TouchableOpacity>
-      )}
+      {/* Footer - Fixed at bottom */}
+      <DownNavbar style={styles.stickyNavbar} />
     </SafeAreaView>
   );
+};
+
+const COLORS = {
+  PRIMARY: '#0014A8',
+  TEXT_DARK: '#333',
+  TEXT_SECONDARY: '#888',
+  BACKGROUND: '#F3F6FB',
+  BORDER: '#e0e0e0',
+  CANCELLED: '#F44336',
 };
 
 const styles = StyleSheet.create({
@@ -198,24 +212,21 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: wp('5%'),
     borderBottomRightRadius: wp('5%'),
   },
-  headerTitle: {
-    fontSize: wp('7%'),
-    fontWeight: '800',
-    color: '#010080',
-    fontFamily: 'Poppins',
-    marginBottom: hp('0.2%'),
-    letterSpacing: wp('0.1%'),
-  },
   headerSubtitle: {
     fontSize: wp('4%'),
     color: '#555',
     fontFamily: 'Poppins',
     marginBottom: hp('0.2%'),
   },
+  contentContainer: {
+    flex: 1,
+    // Dynamic padding will be applied inline
+  },
   grid: {
     paddingHorizontal: wp('2%'),
     paddingBottom: hp('2%'),
     alignItems: 'center',
+    flexGrow: 1,
   },
   canteenCard: {
     backgroundColor: '#fff',
@@ -240,6 +251,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowColor: '#010080',
     backgroundColor: '#f0f4ff',
+    transform: [{scale: 1.02}], // Slight scale for selection feedback
   },
   canteenImage: {
     width: wp('36%'),
@@ -268,26 +280,38 @@ const styles = StyleSheet.create({
     height: wp('7%'),
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 2,
+    elevation: 3,
+    shadowColor: '#010080',
+    shadowOpacity: 0.3,
+    shadowRadius: wp('1%'),
+    shadowOffset: {width: 0, height: hp('0.2%')},
   },
   checkMark: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: wp('4.5%'),
   },
+  confirmButtonContainer: {
+    position: 'absolute',
+    bottom: hp('8%'), // Position above the footer
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(245, 247, 250, 0.95)', // Semi-transparent background
+    paddingHorizontal: wp('5%'),
+    paddingVertical: hp('1%'),
+    borderTopWidth: wp('0.1%'),
+    borderTopColor: '#e0e0e0',
+  },
   confirmButton: {
     backgroundColor: '#010080',
     paddingVertical: hp('2%'),
     borderRadius: wp('4%'),
-    alignSelf: 'center',
-    width: wp('90%'),
-    marginBottom: hp('3%'),
-    marginTop: hp('1%'),
-    elevation: 4,
+    width: '100%',
+    elevation: 6,
     shadowColor: '#010080',
-    shadowOpacity: 0.15,
-    shadowRadius: wp('2%'),
-    shadowOffset: {width: 0, height: hp('0.2%')},
+    shadowOpacity: 0.25,
+    shadowRadius: wp('3%'),
+    shadowOffset: {width: 0, height: hp('0.3%')},
   },
   confirmButtonText: {
     color: '#fff',
@@ -296,6 +320,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: wp('0.2%'),
     fontFamily: 'Poppins',
+  },
+  stickyNavbar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingVertical: hp('1.2%'),
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    borderTopWidth: wp('0.2%'),
+    borderTopColor: COLORS.BORDER,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: wp('2%'),
+    shadowOffset: {width: 0, height: -hp('0.2%')},
   },
   emptyText: {
     color: '#aaa',

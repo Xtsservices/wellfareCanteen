@@ -48,27 +48,14 @@ const DownNavbar: React.FC<{ style?: any }> = ({ style }) => {
 
   return (
     <View style={[styles.container, style]}>
-      <TouchableOpacity
-        onPress={async () => {
-          try {
-            const id = canteenId ?? (await AsyncStorage.getItem('canteenId'));
-            if (!id) {
-              Alert.alert('Error', 'No canteen selected');
-              return;
-            }
-            navigation.navigate('Dashboard', { SelectCanteenId: id });
-            console.log('Canteen ID:', id);
-          } catch (error) {
-            console.error('Error navigating:', error);
-            Alert.alert('Error', 'Failed to navigate');
-          }
-        }}
-      >
+
+      <TouchableOpacity onPress={() => navigation.navigate('SelectCanteen')}>
         <Image
           source={require('../screens/imgs/userhome.png')}
           style={styles.icon}
         />
       </TouchableOpacity>
+
       <TouchableOpacity onPress={() => navigation.navigate('ViewOrders')}>
         <Image
           source={require('../screens/imgs/userlist.png')}
