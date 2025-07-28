@@ -76,7 +76,7 @@ const SelectCanteenScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       fetchCanteens();
-    }, [navigation]),
+    }, []),
   );
 
   const handleCanteenSelect = (canteenName: string) => {

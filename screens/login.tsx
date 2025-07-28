@@ -12,7 +12,6 @@ import {
   Alert,
   BackHandler,
   Animated,
-  Dimensions,
   StatusBar,
   ScrollView,
   KeyboardAvoidingView,
@@ -27,7 +26,6 @@ import {jwtDecode} from 'jwt-decode';
 import {useDispatch} from 'react-redux';
 const logo = require('./imgs/worldtek.png');
 
-const {width, height} = Dimensions.get('window');
 
 type RootStackParamList = {
   SelectCanteen: undefined;
@@ -55,7 +53,6 @@ const LoginScreen = () => {
   const otpInputs = useRef<Array<TextInput | null>>([]);
   const scrollViewRef = useRef<ScrollView>(null);
   const phoneInputRef = useRef<TextInput>(null);
-  
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;

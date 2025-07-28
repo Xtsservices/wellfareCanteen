@@ -34,7 +34,8 @@ export type RootStackParamList = {
     menuPrice: number;
     menuCurrency: string;
   };
-  Walkin: undefined; 
+  CheckUserLogin: undefined;
+  Walkin: undefined;
   SettingsScreen: undefined;
   LoginScreen: undefined;
   ProfileScreen: undefined;

@@ -5,8 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  TouchableOpacity,
-  Image,
 } from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from './navigationTypes';
@@ -37,7 +35,7 @@ interface ContactUsScreenProps {
   navigation: ContactUsScreenNavigationProp;
 }
 
-const ContactUsScreen: React.FC<ContactUsScreenProps> = ({navigation}) => {
+const ContactUsScreen: React.FC<ContactUsScreenProps> = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header text="Contact Us" />
