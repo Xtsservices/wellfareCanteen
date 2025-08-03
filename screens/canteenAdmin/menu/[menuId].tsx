@@ -349,7 +349,7 @@ const MenuItemDetails: React.FC<MenuItemDetailsProps> = ({ navigation }) => {
       return (
         <Image
           source={{
-            uri: `data:image/png;base64,${item?.item?.image}`
+            uri: item?.item?.image
           }}
           style={menuCardStyles.image}
           resizeMode="cover"

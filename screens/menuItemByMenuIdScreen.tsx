@@ -325,7 +325,7 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
               <Image
                 source={{
                   uri: item?.item?.image
-                    ? `data:image/png;base64,${item?.item?.image}`
+                    ? item?.item?.image
                     : 'https://via.placeholder.com/120',
                 }}
                 style={styles.menuCardImage}

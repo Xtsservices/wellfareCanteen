@@ -450,13 +450,13 @@ const MenuItemsByMenuIdScreen = () => {
 
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {menuData.menuItems.map((item, index) => (
+          {menuData.menuItems.map((item) => (
             <View key={item.id} style={styles.menuCardRow}>
               {/* Image on the left */}
               <Image
                 source={{
                   uri: item.item.image
-                    ? `data:image/png;base64,${item.item.image}`
+                    ? item.item.image
                     : 'https://via.placeholder.com/120',
                 }}
                 style={styles.menuItemImage}

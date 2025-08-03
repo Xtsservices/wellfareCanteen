@@ -77,7 +77,7 @@ const CheckUserLogin = ({ navigation }: { navigation: NavigationProp<RootStackPa
     <View style={styles.container}>
       <View style={styles.contentContainer}>
         {/* App Title */}
-        <Text style={styles.appTitle}>Welfare Canteen App</Text>
+        <Text style={styles.appTitle}>Welfare Canteen</Text>
 
         {/* Loading Section */}
         {loading && (

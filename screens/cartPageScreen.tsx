@@ -63,7 +63,7 @@ const CartItemComponent = memo(
       <Image
         source={{
           uri: item.item.image
-            ? `data:image/png;base64,${item.item.image}`
+            ? item.item.image
             : 'https://via.placeholder.com/80',
         }}
         style={styles.itemImage}

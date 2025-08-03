@@ -63,7 +63,7 @@ export const fetchCartData = async () => {
       throw new Error('No cart data found');
     }
   } catch (error) {
-    console.error('Error fetching cart data:carthelpers', error);
+    // console.error('Error fetching cart data:carthelpers', error);
     throw error;
   }
 };

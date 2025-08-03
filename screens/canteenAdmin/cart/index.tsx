@@ -165,7 +165,7 @@ const CartScreen: React.FC<{ navigation: CartScreenNavigationProp }> = ({ naviga
                 {cartData.cartItems.map(item => (
                     <View key={item.id} style={styles.cartItem}>
                         <Image
-                            source={{ uri: item.item?.image ? `data:image/png;base64,${item.item.image}` : 'https://via.placeholder.com/80' }}
+                            source={{ uri: item.item?.image ? item.item.image : 'https://via.placeholder.com/80' }}
                             style={styles.itemImage}
                         />
                         <View style={styles.itemDetails}>

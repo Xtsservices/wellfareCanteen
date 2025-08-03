@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,13 @@ import DownNavbar from './downNavbar';
 import Header from './header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import QRCode from 'react-native-qrcode-svg';
 import ViewShot from 'react-native-view-shot';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {API_BASE_URL} from './services/restApi';
+import { API_BASE_URL } from './services/restApi';
 
 import RNFS from 'react-native-fs';
 
@@ -29,9 +30,10 @@ const ViewOrders: React.FC = () => {
     new Set(),
   );
   const [loading, setLoading] = useState<boolean>(true);
-  const qrCodeRef = useRef<ViewShot>(null);
+  // Store refs for each QR code, keyed by order ID
+  const qrRefs = useRef<{ [key: number]: any }>({});
 
-  const {SaveImageModule} = NativeModules;
+  const { SaveImageModule } = NativeModules;
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -43,7 +45,36 @@ const ViewOrders: React.FC = () => {
             authorization: token || '',
           },
         });
-        setOrders(response.data.data || []);
+        if (response?.data?.data) {
+          const ordersWithQR = response.data.data.map((order: any) => ({
+            ...order,
+            qrValue: `https://server.welfarecanteen.in/api/order/${order.id}` // No need to generate dataURL
+          }));
+          setOrders(ordersWithQR);
+        }
+
+        //           if (response?.data?.data) {
+        //           // Map through orders to add QR code to each order item
+        //            const ordersWithQR = await Promise.all(
+        //         response.data.data.map(async (order:any) => {
+        //           const qrCodeData = `https://server.welfarecanteen.in/api/order/${order.id}`;
+        //           const qrCodeDataURL = await QRCode.toDataURL(qrCodeData); // PNG base64
+
+        //           return {
+        //             ...order,
+        //             qrCode: qrCodeDataURL,
+        //             qrValue: qrCodeData, // Store the value used for scan
+        //           };
+        //         })
+        //       );
+        // console.log("ordersWithQR",ordersWithQR)
+        //       setOrders(ordersWithQR);
+
+        //         // setOrders(response.data.data);
+        //         }
+
+        // setOrders(response.data.data || []);
+
       } catch (error: any) {
         console.error('Failed to fetch orders', error);
       } finally {
@@ -79,7 +110,7 @@ const ViewOrders: React.FC = () => {
       'Cancel Order',
       `Are you sure you want to cancel this order?\n\nOrder Status: ${currentStatus.toUpperCase()}\n\nNote: Cancelled orders cannot be undone.`,
       [
-        {text: 'No', style: 'cancel'},
+        { text: 'No', style: 'cancel' },
         {
           text: 'Yes, Cancel',
           style: 'destructive',
@@ -90,7 +121,7 @@ const ViewOrders: React.FC = () => {
               console.log('Cancelling order with ID:', orderId);
               const response = await axios.post(
                 `${API_BASE_URL}/order/cancelOrder`,
-                {orderId},
+                { orderId },
                 {
                   headers: {
                     'Content-Type': 'application/json',
@@ -102,7 +133,7 @@ const ViewOrders: React.FC = () => {
               setOrders(prevOrders =>
                 prevOrders.map(order =>
                   order.id === orderId
-                    ? {...order, status: 'cancelled'}
+                    ? { ...order, status: 'cancelled' }
                     : order,
                 ),
               );
@@ -128,26 +159,6 @@ const ViewOrders: React.FC = () => {
     );
   };
 
-  const SaveQrToGallery = async () => {
-    console.log('Saving QR code to gallery...');
-    try {
-      if (qrCodeRef.current) {
-        const uri = await qrCodeRef.current.capture?.();
-        
-        if (uri) {
-          const base64 = await RNFS.readFile(uri, 'base64');
-          await SaveImageModule.saveBase64Image(base64, `QRCode_${Date.now()}`);
-          Alert.alert('Success', 'QR code saved to gallery!');
-        } else {
-          Alert.alert('Error', 'Failed to capture QR code');
-        }
-      } else {
-        Alert.alert('Error', 'QR code reference not found');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save QR code to gallery');
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -164,11 +175,54 @@ const ViewOrders: React.FC = () => {
     }
   };
 
-  const renderOrder = ({item}: {item: any}) => {
+
+
+  const handleDownload = async (orderId: number) => {
+    try {
+      const qrRef = qrRefs.current[orderId];
+
+      if (!qrRef) {
+        Alert.alert('Error', 'QR code reference not found');
+        return;
+      }
+
+      // Convert QR to base64
+      qrRef.toDataURL(async (data: string) => {
+        try {
+          if (!data) {
+            throw new Error('Base64 data is empty');
+          }
+
+          // remove prefix
+          const cleanBase64 = data.replace(/^data:image\/png;base64,/, '');
+
+          // save
+          const res = await SaveImageModule.saveBase64Image(
+            cleanBase64,
+            `QRCode_${orderId}_${Date.now()}`
+          );
+          console.log(res);
+          Alert.alert('Success', 'QR code saved to gallery!');
+        } catch (e: any) {
+          console.log(e);
+          Alert.alert('Error', e?.message || 'Failed to save QR');
+        }
+      });
+    } catch (e: any) {
+      console.log('Error in handleDownload', e);
+      Alert.alert('Error', e?.message || 'Unknown error');
+    }
+  };
+
+
+
+  // console.log("orders",orders)
+  const renderOrder = ({ item }: { item: any }) => {
     const isCancelled = item.status.toLowerCase() === 'cancelled';
     const strikeThroughStyle = isCancelled
-      ? {textDecorationLine: 'line-through' as 'line-through', color: '#888'}
+      ? { textDecorationLine: 'line-through' as 'line-through', color: '#888' }
       : {};
+    console.log("orders", item);
 
     return (
       <View style={styles.orderCard}>
@@ -176,7 +230,7 @@ const ViewOrders: React.FC = () => {
           <Text style={[styles.orderId, strikeThroughStyle]}>
             Order #{item.id}
           </Text>
-          <Text style={[styles.status, {color: getStatusColor(item.status)}]}>
+          <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
             {item.status.toUpperCase()}
           </Text>
         </View>
@@ -235,7 +289,7 @@ const ViewOrders: React.FC = () => {
             </Text>
           </View>
         )}
-        {item.qrCode &&
+        {item.qrValue &&
           isRecentOrder(item.createdAt) &&
           !isCancelled &&
           item.status.toUpperCase() !== 'CANCELED' &&
@@ -243,16 +297,16 @@ const ViewOrders: React.FC = () => {
             <TouchableOpacity
               style={styles.qrContainer}
               activeOpacity={0.8}
-              onPress={SaveQrToGallery}>
-              <ViewShot ref={qrCodeRef} options={{format: 'png', quality: 1}}>
-                <Image
-                  source={{uri: item.qrCode}}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
-              </ViewShot>
+              onPress={() => handleDownload(item.id)}
+            >
+              <QRCode
+                value={item.qrValue}
+                size={120}
+                getRef={(c) => (qrRefs.current[item.id] = c)}
+              />
               <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
             </TouchableOpacity>
+
           )}
       </View>
     );
@@ -319,7 +373,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.07,
     shadowRadius: wp('2%'),
-    shadowOffset: {width: 0, height: hp('0.2%')},
+    shadowOffset: { width: 0, height: hp('0.2%') },
     elevation: 3,
   },
   orderHeader: {

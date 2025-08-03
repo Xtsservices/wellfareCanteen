@@ -261,7 +261,7 @@ const Breakfast: React.FC<BreakfastProps> = ({ navigation }) => {
         <Image
           source={{
             uri: imageUrl
-              ? `data:image/png;base64,${imageUrl}`
+              ? imageUrl
               : 'https://via.placeholder.com/150',
           }}
           style={styles.itemImage}
