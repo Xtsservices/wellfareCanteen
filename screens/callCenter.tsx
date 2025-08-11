@@ -6,12 +6,13 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
-  Image,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DownNavbar from './downNavbar';
 import Header from './header';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import YoutubePlayer from 'react-native-youtube-iframe';
 
 // Constants
 const API_URL = 'https://iqtelephony.airtel.in/gateway/airtel-xchange/v2/execute/workflow';
@@ -27,6 +28,27 @@ const COLORS = {
 
 // Types
 type CallOption = 1 | 2 | 3;
+
+const VIDEOS = [
+  {
+    id: "jqI5myb9qCM",
+    title: "Telugu Support Guide",
+    language: "Telugu",
+    thumbnail: "https://img.youtube.com/vi/jqI5myb9qCM/maxresdefault.jpg",
+  },
+  {
+    id: "ibCUNjQ5BA8",
+    title: "Hindi Support Guide", 
+    language: "Hindi",
+    thumbnail: "https://img.youtube.com/vi/ibCUNjQ5BA8/maxresdefault.jpg",
+  },
+  {
+    id: "S6mvxC0Gtno",
+    title: "English Support Guide",
+    language: "English", 
+    thumbnail: "https://img.youtube.com/vi/S6mvxC0Gtno/maxresdefault.jpg",
+  },
+];
 
 const CallCenterScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -108,7 +130,10 @@ const CallCenterScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <Header text="Call Center" />
       <Text style={styles.canteenName}>Welcome to Welfare Canteen Call Center</Text>
-      <View style={styles.content}>
+      <ScrollView
+        style={{ flex: 1, paddingHorizontal: wp('5%'), paddingTop: hp('2%') }}
+        contentContainerStyle={{ alignItems: 'center' }}
+      >
         {[1, 2, 3].map(option => (
           <TouchableOpacity
             key={option}
@@ -134,7 +159,25 @@ const CallCenterScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+        <Text style={styles.sectionTitle}>Support Guides</Text>
+        {VIDEOS.map(video => (
+          <View
+            key={video.id}
+            style={styles.videoCard}
+          >
+            <YoutubePlayer
+              height={hp('25%')}
+              width={wp('90%')}
+              play={false}
+              videoId={video.id}
+            />
+            <View style={styles.videoInfo}>
+              <Text style={styles.videoTitle}>{video.title}</Text>
+              <Text style={styles.videoLanguage}>{video.language}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
       <DownNavbar />
     </SafeAreaView>
   );
@@ -151,12 +194,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: hp('1.5%'),
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: wp('5%'),
   },
   card: {
     width: wp('90%'),
@@ -178,6 +215,43 @@ const styles = StyleSheet.create({
   cardDescription: {
     color: COLORS.TEXT_SECONDARY,
     fontSize: wp('3.5%'),
+    marginTop: hp('0.5%'),
+  },
+  sectionTitle: {
+    color: COLORS.PRIMARY,
+    fontSize: wp('5%'),
+    fontWeight: 'bold',
+    marginTop: hp('3%'),
+    marginBottom: hp('1.5%'),
+    alignSelf: 'flex-start',
+  },
+  videoCard: {
+    width: wp('90%'),
+    flexDirection: 'column',
+    padding: wp('3%'),
+    marginVertical: hp('1%'),
+    borderRadius: wp('2.5%'),
+    backgroundColor: '#f9f9f9',
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: COLORS.PRIMARY,
+    shadowOpacity: 0.05,
+    shadowRadius: wp('1.5%'),
+    shadowOffset: { width: 0, height: hp('0.1%') },
+  },
+  videoInfo: {
+    flex: 1,
+    marginTop: hp('1%'),
+    alignItems: 'center',
+  },
+  videoTitle: {
+    fontSize: wp('4%'),
+    fontWeight: '600',
+    color: COLORS.TEXT_DARK,
+  },
+  videoLanguage: {
+    fontSize: wp('3.5%'),
+    color: COLORS.TEXT_SECONDARY,
     marginTop: hp('0.5%'),
   },
 });

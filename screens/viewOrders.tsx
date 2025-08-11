@@ -5,24 +5,24 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Alert,
   ActivityIndicator,
   NativeModules,
+  Image,
 } from 'react-native';
 import DownNavbar from './downNavbar';
 import Header from './header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import QRCode from 'react-native-qrcode-svg';
-import ViewShot from 'react-native-view-shot';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { API_BASE_URL } from './services/restApi';
-
-import RNFS from 'react-native-fs';
+import ViewShot from 'react-native-view-shot';
+// const logo = require('./imgs/worldtek.png');
+const logo = require('./imgs/worldtek.png')
 
 const ViewOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -30,8 +30,10 @@ const ViewOrders: React.FC = () => {
     new Set(),
   );
   const [loading, setLoading] = useState<boolean>(true);
+  const [canteenName, setCanteenName] = useState<string>('Welfare Canteen');
   // Store refs for each QR code, keyed by order ID
   const qrRefs = useRef<{ [key: number]: any }>({});
+  const viewShotRefs = useRef<{ [key: number]: any }>({});
 
   const { SaveImageModule } = NativeModules;
 
@@ -39,6 +41,11 @@ const ViewOrders: React.FC = () => {
     const fetchOrders = async () => {
       try {
         const token = await AsyncStorage.getItem('authorization');
+        const storedCanteenName = await AsyncStorage.getItem('canteenName');
+        if (storedCanteenName) {
+          setCanteenName(storedCanteenName);
+        }
+        
         const response = await axios.get(`${API_BASE_URL}/order/listOrders`, {
           headers: {
             'Content-Type': 'application/json',
@@ -48,37 +55,14 @@ const ViewOrders: React.FC = () => {
         if (response?.data?.data) {
           const ordersWithQR = response.data.data.map((order: any) => ({
             ...order,
-            qrValue: `https://server.welfarecanteen.in/api/order/${order.id}` // No need to generate dataURL
+            qrValue: `https://server.welfarecanteen.in/api/order/${order.id}`
           }));
           setOrders(ordersWithQR);
         }
-
-        //           if (response?.data?.data) {
-        //           // Map through orders to add QR code to each order item
-        //            const ordersWithQR = await Promise.all(
-        //         response.data.data.map(async (order:any) => {
-        //           const qrCodeData = `https://server.welfarecanteen.in/api/order/${order.id}`;
-        //           const qrCodeDataURL = await QRCode.toDataURL(qrCodeData); // PNG base64
-
-        //           return {
-        //             ...order,
-        //             qrCode: qrCodeDataURL,
-        //             qrValue: qrCodeData, // Store the value used for scan
-        //           };
-        //         })
-        //       );
-        // console.log("ordersWithQR",ordersWithQR)
-        //       setOrders(ordersWithQR);
-
-        //         // setOrders(response.data.data);
-        //         }
-
-        // setOrders(response.data.data || []);
-
       } catch (error: any) {
         console.error('Failed to fetch orders', error);
       } finally {
-        setLoading(false); // Set loading to false when API call succeeds or fails
+        setLoading(false);
       }
     };
     fetchOrders();
@@ -87,6 +71,24 @@ const ViewOrders: React.FC = () => {
   const formatDateTime = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleString();
+  };
+
+  const formatDateForQR = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const formatTimeForQR = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const isRecentOrder = (timestamp: number) => {
@@ -159,7 +161,6 @@ const ViewOrders: React.FC = () => {
     );
   };
 
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -175,28 +176,28 @@ const ViewOrders: React.FC = () => {
     }
   };
 
-
-
   const handleDownload = async (orderId: number) => {
     try {
-      const qrRef = qrRefs.current[orderId];
+      const viewShotRef = viewShotRefs.current[orderId];
 
-      if (!qrRef) {
+      if (!viewShotRef) {
         Alert.alert('Error', 'QR code reference not found');
         return;
       }
 
-      // Convert QR to base64
-      qrRef.toDataURL(async (data: string) => {
+      // Capture the entire QR frame as image
+      const uri = await viewShotRef.capture();
+      
+      // Convert to base64 and save
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      reader.onloadend = async () => {
         try {
-          if (!data) {
-            throw new Error('Base64 data is empty');
-          }
-
-          // remove prefix
-          const cleanBase64 = data.replace(/^data:image\/png;base64,/, '');
-
-          // save
+          const base64data = reader.result as string;
+          const cleanBase64 = base64data.replace(/^data:image\/png;base64,/, '');
+          
           const res = await SaveImageModule.saveBase64Image(
             cleanBase64,
             `QRCode_${orderId}_${Date.now()}`
@@ -207,22 +208,20 @@ const ViewOrders: React.FC = () => {
           console.log(e);
           Alert.alert('Error', e?.message || 'Failed to save QR');
         }
-      });
+      };
+      
+      reader.readAsDataURL(blob);
     } catch (e: any) {
       console.log('Error in handleDownload', e);
       Alert.alert('Error', e?.message || 'Unknown error');
     }
   };
 
-
-
-  // console.log("orders",orders)
   const renderOrder = ({ item }: { item: any }) => {
     const isCancelled = item.status.toLowerCase() === 'cancelled';
     const strikeThroughStyle = isCancelled
       ? { textDecorationLine: 'line-through' as 'line-through', color: '#888' }
       : {};
-    console.log("orders", item);
 
     return (
       <View style={styles.orderCard}>
@@ -299,19 +298,67 @@ const ViewOrders: React.FC = () => {
               activeOpacity={0.8}
               onPress={() => handleDownload(item.id)}
             >
-              <QRCode
-                value={item.qrValue}
-                size={120}
-                getRef={(c) => (qrRefs.current[item.id] = c)}
-              />
-              <Text style={styles.qrDownloadText}>Tap QR to Download</Text>
+              <ViewShot 
+                ref={(ref) => (viewShotRefs.current[item.id] = ref)}
+                options={{ format: "png", quality: 1.0 }}
+                style={styles.qrFrame}
+              >
+                {/* Header Section */}
+                <View style={styles.qrFrameHeader}>
+                  <Text style={styles.qrFrameTitle}>
+                    {item?.orderCanteen?.canteenName || 'Welfare Canteen'}
+                  </Text>
+                </View>
+                
+                {/* QR Code Section */}
+                <View style={styles.qrCodeSection}>
+                  <View style={styles.qrCodeWrapper}>
+                    <QRCode
+                      value={item.qrValue}
+                      size={120}
+                      backgroundColor="#FFFFFF"
+                      color="#000000"
+                      getRef={(c) => (qrRefs.current[item.id] = c)}
+                    />
+                  </View>
+                </View>
+                
+                {/* Footer Section */}
+                <View style={styles.qrFrameFooter}>
+                  <View style={styles.qrInfoRow}>
+                    <Text style={styles.qrInfoLabel}>Order ID:</Text>
+                    <Text style={styles.qrInfoValue}>#{item.id}</Text>
+                  </View>
+                  <View style={styles.qrInfoRow}>
+                    <Text style={styles.qrInfoLabel}>Date:</Text>
+                    <Text style={styles.qrInfoValue}>{formatDateForQR(item.createdAt)}</Text>
+                  </View>
+                  <View style={styles.qrInfoRow}>
+                    <Text style={styles.qrInfoLabel}>Time:</Text>
+                    <Text style={styles.qrInfoValue}>{formatTimeForQR(item.createdAt)}</Text>
+                  </View>
+                  <View style={styles.qrInfoRow}>
+                    <Text style={styles.qrInfoLabel}>Amount:</Text>
+                    <Text style={styles.qrInfoValueAmount}>₹{item.totalAmount}</Text>
+                  </View>
+                </View>
+                {/* Bottom Brand */}
+                <View style={styles.qrBrandSection}>
+                  <Text style={styles.qrBrandText}>Powered by </Text>
+                  <Image
+            source={logo}
+            style={styles.poweredByLogo}
+            resizeMode="contain"
+          />
+                </View>
+              </ViewShot>
+              <Text style={styles.qrDownloadText}>Tap to Download QR Receipt</Text>
             </TouchableOpacity>
-
           )}
       </View>
     );
   };
-  console.log('loading:===========start=====', loading);
+
   return (
     <View style={styles.container}>
       <Header text="Orders History" />
@@ -350,6 +397,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
+  },
+   poweredByLogo: {
+    width: 120,
+    height: 35,
   },
   loadingContainer: {
     flex: 1,
@@ -463,19 +514,97 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: hp('1.5%'),
   },
-  qrImage: {
-    width: wp('45%'),
-    height: wp('45%'),
+  qrFrame: {
+    backgroundColor: '#FFFFFF',
     borderRadius: wp('3%'),
-    borderWidth: wp('0.2%'),
-    borderColor: COLORS.BORDER,
-    backgroundColor: '#fff',
+    padding: wp('4%'),
+    borderWidth: 2,
+    borderColor: COLORS.PRIMARY,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: wp('2%'),
+    shadowOffset: { width: 0, height: hp('0.2%') },
+    elevation: 5,
+    width: wp('70%'),
+  },
+  qrFrameHeader: {
+    alignItems: 'center',
+    marginBottom: hp('2%'),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    paddingBottom: hp('1%'),
+  },
+  qrFrameTitle: {
+    fontSize: wp('4.5%'),
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    textAlign: 'center',
+  },
+  qrFrameSubtitle: {
+    fontSize: wp('3%'),
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: hp('0.2%'),
+  },
+  qrCodeSection: {
+    alignItems: 'center',
+    marginVertical: hp('1.5%'),
+  },
+  qrCodeWrapper: {
+    backgroundColor: '#FFFFFF',
+    padding: wp('2%'),
+    borderRadius: wp('2%'),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  qrFrameFooter: {
+    marginTop: hp('1.5%'),
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingTop: hp('1%'),
+  },
+  qrInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: hp('0.5%'),
+  },
+  qrInfoLabel: {
+    fontSize: wp('3%'),
+    color: COLORS.TEXT_SECONDARY,
+    fontWeight: '500',
+  },
+  qrInfoValue: {
+    fontSize: wp('3%'),
+    color: COLORS.TEXT_DARK,
+    fontWeight: '600',
+  },
+  qrInfoValueAmount: {
+    fontSize: wp('3.2%'),
+    color: COLORS.PRIMARY,
+    fontWeight: 'bold',
+  },
+  qrBrandSection: {
+    alignItems: 'center',
+    marginTop: hp('1%'),
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: hp('0.8%'),
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: wp('1%'),
+  },
+  qrBrandText: {
+    fontSize: wp('2.5%'),
+    color: COLORS.TEXT_SECONDARY,
+    fontStyle: 'italic',
   },
   qrDownloadText: {
-    marginTop: hp('0.8%'),
+    marginTop: hp('1%'),
     color: COLORS.PRIMARY,
     fontWeight: 'bold',
     fontSize: wp('3.2%'),
+    textAlign: 'center',
   },
   emptyText: {
     textAlign: 'center',
