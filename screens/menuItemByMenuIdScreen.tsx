@@ -153,6 +153,13 @@ const MenuItemsByMenuIdScreenNew: React.FC = () => {
 
   const addToCart = async (item: any, menudata: MenuData) => {
     try {
+// =============storing added time into cart=========
+      const existingTime = await AsyncStorage.getItem('addedTime');
+    if (!existingTime) {
+      const currentTime = new Date().toISOString();
+      await AsyncStorage.setItem('addedTime', currentTime);
+    }
+
       setUpdateLoading(item.id);
       const minQty = 1;
       await addItemToCart(

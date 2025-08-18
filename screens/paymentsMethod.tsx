@@ -245,8 +245,8 @@ const PaymentMethod: React.FC = () => {
       // Online payment via Cashfree SDK
       const userData = {
         customer_id: 'user_001', // TODO: Replace with actual user ID
-        customer_email: 'testuser@example.com', 
-        customer_phone: phoneNumber, 
+        customer_email: 'testuser@example.com',
+        customer_phone: phoneNumber,
         order_amount:checkoutTotalBalance
       };
 

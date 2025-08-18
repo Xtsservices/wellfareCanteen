@@ -8,7 +8,7 @@ import {
   ScrollView,
   BackHandler,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp,useFocusEffect} from '@react-navigation/native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -56,20 +56,65 @@ const PaymentStatusScreen: React.FC = () => {
   console.log('status:=========', status);
   console.log('orderData:==========', orderData);
 
-  useEffect(() => {
+  useFocusEffect(
+  React.useCallback(() => {
     const placeOrder = async () => {
       try {
         const token = await AsyncStorage.getItem('authorization');
 
         if (!token) return;
+        const orderId = orderData?.id;
+
         const response = await fetch(`${API_BASE_URL}/order/placeOrder`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             authorization: token,
           },
-          body: JSON.stringify({paymentMethod: ['online'], platform: 'mobile'}),
+          body: JSON.stringify({
+            paymentMethod: ['online'],
+            platform: 'mobile',
+            orderId,
+          }),
         });
+
+        if (response) {
+          navigation.replace('ViewOrders');
+        }
+
+        console.log(
+          'Order placement response==============================:',
+          response.status,
+        );
+      } catch (err) {
+        console.error('Order placement failed:', err);
+      }
+    };
+
+    if (status === 'success') {
+      placeOrder();
+    }
+  }, [status, orderData, navigation]),
+);
+
+  useEffect(() => {
+    const placeOrder = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authorization');
+
+        if (!token) return;
+        const orderId = orderData?.id
+        const response = await fetch(`${API_BASE_URL}/order/placeOrder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: token,
+          },
+          body: JSON.stringify({paymentMethod: ['online'], platform: 'mobile',orderId}),
+        });
+        if (response) {
+          navigation.replace('ViewOrders');
+        }
         console.log(
           'Order placement response==============================:',
           response.status,

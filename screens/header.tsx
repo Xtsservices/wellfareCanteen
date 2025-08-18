@@ -1,8 +1,13 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from './navigationTypes';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  clearCart as clearCartHelper,
+} from './services/cartHelpers';
+
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -19,6 +24,33 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({text}) => {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
+
+
+
+useFocusEffect(
+  React.useCallback(() => {
+    const checkCartTime = async () => {
+      try {
+        const addedTime = await AsyncStorage.getItem('addedTime');
+        if (addedTime) {
+          const addedDate = new Date(addedTime);
+          const now = new Date();
+          const diffMs = now.getTime() - addedDate.getTime();
+          const diffMins = diffMs / (1000 * 60);
+          if (diffMins >= 15) {
+            await clearCartHelper();
+            await AsyncStorage.removeItem('addedTime');
+          }
+        }
+      } catch (e) {
+        console.error('Error checking cart time:', e);
+      }
+    };
+
+    checkCartTime();
+  }, [navigation]),
+);
+
 
   return (
     <View style={styles.header}>

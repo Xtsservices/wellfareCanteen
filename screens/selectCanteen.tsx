@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   confirmButtonContainer: {
     position: 'absolute',
-    bottom: hp('8%'), // Position above the footer
+    bottom: hp('10%'), // Position above the footer
     left: 0,
     right: 0,
     backgroundColor: 'rgba(245, 247, 250, 0.95)', // Semi-transparent background

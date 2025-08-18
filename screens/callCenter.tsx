@@ -94,7 +94,7 @@ const CallCenterScreen: React.FC = () => {
             participants: [
               {
                 participantAddress:
-                  option === 1 ? '9494999989' : option === 2 ? '9701646859' : '9052519059',
+                  option === 1 ? '9701646859' : option === 2 ? '9052519059' : '9701646859',
                 participantName: 'pqr',
                 maxRetries: 1,
                 maxTime: 360,

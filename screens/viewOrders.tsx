@@ -266,6 +266,7 @@ const ViewOrders: React.FC = () => {
         {canCancelOrder(item.status) &&
           !isCancelled &&
           item.status.toUpperCase() !== 'CANCELED' &&
+          item.status.toUpperCase() !== 'INITIATED' &&
           item.status.toUpperCase() !== 'COMPLETED' && (
             <TouchableOpacity
               style={[
@@ -292,6 +293,7 @@ const ViewOrders: React.FC = () => {
           isRecentOrder(item.createdAt) &&
           !isCancelled &&
           item.status.toUpperCase() !== 'CANCELED' &&
+          item.status.toUpperCase() !== 'INITIATED' &&
           item.status.toUpperCase() !== 'COMPLETED' && (
             <TouchableOpacity
               style={styles.qrContainer}
@@ -330,11 +332,11 @@ const ViewOrders: React.FC = () => {
                     <Text style={styles.qrInfoValue}>#{item.id}</Text>
                   </View>
                   <View style={styles.qrInfoRow}>
-                    <Text style={styles.qrInfoLabel}>Date:</Text>
+                    <Text style={styles.qrInfoLabel}>Booked For:</Text>
                     <Text style={styles.qrInfoValue}>{formatDateForQR(item.createdAt)}</Text>
                   </View>
                   <View style={styles.qrInfoRow}>
-                    <Text style={styles.qrInfoLabel}>Time:</Text>
+                    <Text style={styles.qrInfoLabel}>Booked Time:</Text>
                     <Text style={styles.qrInfoValue}>{formatTimeForQR(item.createdAt)}</Text>
                   </View>
                   <View style={styles.qrInfoRow}>

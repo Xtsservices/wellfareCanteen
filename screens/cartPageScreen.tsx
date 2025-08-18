@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Header from './header';
@@ -260,6 +260,7 @@ const CartPage: React.FC = () => {
     try {
       setLoading(true);
       await clearCartHelper();
+
       setCartData({
         id: 0,
         cartItems: [],
@@ -317,35 +318,59 @@ const CartPage: React.FC = () => {
 
 
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Header text="My Cart" />
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-        </View>
-        <DownNavbar />
-      </View>
-    );
-  }
+useFocusEffect(
+  React.useCallback(() => {
+    const checkCartTime = async () => {
+      try {
+        const addedTime = await AsyncStorage.getItem('addedTime');
+        if (addedTime) {
+          const addedDate = new Date(addedTime);
+          const now = new Date();
+          const diffMs = now.getTime() - addedDate.getTime();
+          const diffMins = diffMs / (1000 * 60);
+          if (diffMins >= 15) {
+            await clearCartHelper();
+            await AsyncStorage.removeItem('addedTime');
+          }
+        }
+      } catch (e) {
+        console.error('Error checking cart time:', e);
+      }
+    };
 
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Header text="My Cart" />
-        <View style={styles.centeredContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.refreshButton} onPress={loadCartData}>
-            <Text style={styles.refreshButtonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-        <DownNavbar />
-      </View>
-    );
-  }
+    checkCartTime();
+  }, [navigation]),
+);
 
-
+if (loading) {
   return (
+    <View style={styles.container}>
+      <Header text="My Cart" />
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+      </View>
+      <DownNavbar />
+    </View>
+  );
+}
+
+if (error) {
+  return (
+    <View style={styles.container}>
+      <Header text="My Cart" />
+      <View style={styles.centeredContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.refreshButton} onPress={loadCartData}>
+          <Text style={styles.refreshButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+      <DownNavbar />
+    </View>
+  );
+}
+
+
+return (
     <View style={styles.container}>
       <Header text="My Cart" />
       {cartData?.cartItems?.length ? (
