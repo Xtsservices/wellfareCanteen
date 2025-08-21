@@ -333,7 +333,8 @@ const ViewOrders: React.FC = () => {
                   </View>
                   <View style={styles.qrInfoRow}>
                     <Text style={styles.qrInfoLabel}>Booked For:</Text>
-                    <Text style={styles.qrInfoValue}>{formatDateForQR(item.createdAt)}</Text>
+                    {/* this chnages need to check in after playstore */}
+                    <Text style={styles.qrInfoValue}>{formatDateForQR(item.orderDate)}</Text>
                   </View>
                   <View style={styles.qrInfoRow}>
                     <Text style={styles.qrInfoLabel}>Booked Time:</Text>
