@@ -97,43 +97,6 @@ const PaymentStatusScreen: React.FC = () => {
   }, [status, orderData, navigation]),
 );
 
-  useEffect(() => {
-    const placeOrder = async () => {
-      try {
-        const token = await AsyncStorage.getItem('authorization');
-
-        if (!token) return;
-        const orderId = orderData?.id
-        const response = await fetch(`${API_BASE_URL}/order/placeOrder`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: token,
-          },
-          body: JSON.stringify({paymentMethod: ['online'], platform: 'mobile',orderId}),
-        });
-        if (response) {
-          navigation.replace('ViewOrders');
-        }
-        console.log(
-          'Order placement response==============================:',
-          response.status,
-        );
-        // Optionally handle response here
-        // const data = await response.json();
-        // console.log('Order placed:', data);
-      } catch (err) {
-        console.error('Order placement failed:', err);
-      }
-    };
-
-    if (status === 'success') {
-      placeOrder();
-    }
-    // Only run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Prevent hardware back button navigation
   useEffect(() => {
     const backAction = () => {
